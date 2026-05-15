@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>deepdetect</title>
+    <link rel="stylesheet" href="/styles/app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar" aria-label="서비스 헤더">
+        <a class="brand" href="/" aria-label="deepdetect 홈">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>
+            <strong>deepdetect</strong>
+            <small data-i18n="brandSubtitle">영상 익명화</small>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <div class="language-toggle" role="group" aria-label="Language">
+            <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
+            <button class="lang-button" type="button" data-lang="en">ENG</button>
+          </div>
+          <div class="service-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span data-i18n="serviceReady">AI 처리 준비됨</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="work-panel work-panel-primary" aria-labelledby="upload-title">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow" data-i18n="savedVideo">저장 영상</p>
+              <h1 id="upload-title" data-i18n="uploadTitle">영상 익명화 작업</h1>
+            </div>
+            <span class="surface-badge" data-i18n="highQuality">고품질 처리</span>
+          </div>
+
+          <form id="upload-form" class="job-form">
+            <div class="file-grid">
+              <label class="file-control" for="video-input">
+                <input id="video-input" name="video" type="file" accept="video/*" required />
+                <span class="file-copy">
+                  <strong data-i18n="videoFile">처리할 영상</strong>
+                  <small id="video-file-name" data-placeholder-key="videoPlaceholder"
+                    >MP4, MOV, AVI, MKV</small
+                  >
+                </span>
+                <span class="file-action" data-i18n="choose">선택</span>
+              </label>
+
+              <label class="file-control" for="reference-input">
+                <input
+                  id="reference-input"
+                  name="reference_image"
+                  type="file"
+                  accept="image/*"
+                  required
+                />
+                <span class="file-copy">
+                  <strong data-i18n="referenceFace">유지할 얼굴</strong>
+                  <small id="reference-file-name" data-placeholder-key="imagePlaceholder"
+                    >JPG, PNG, WEBP</small
+                  >
+                </span>
+                <span class="file-action" data-i18n="choose">선택</span>
+              </label>
+            </div>
+
+            <fieldset class="mode-group">
+              <legend data-i18n="modeLegend">처리 방식</legend>
+              <label class="mode-option">
+                <input type="radio" name="mode" value="preserve" checked />
+                <span>
+                  <strong data-i18n="preserveMode">원본 유지</strong>
+                  <small data-i18n="preserveModeHint">참조 인물만 그대로 유지</small>
+                </span>
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="mode" value="character" />
+                <span>
+                  <strong data-i18n="characterMode">캐릭터 대체</strong>
+                  <small data-i18n="characterModeHint">참조 인물 얼굴에 캐릭터 적용</small>
+                </span>
+              </label>
+            </fieldset>
+
+            <label id="character-field" class="select-field is-muted">
+              <span data-i18n="characterPreset">캐릭터 프리셋</span>
+              <select id="character-input" name="character_id">
+                <option value="default_emoji" data-i18n="smileEmoji">스마일 이모지</option>
+              </select>
+            </label>
+
+            <button id="submit-button" class="primary-button" type="submit" data-i18n="startProcess">
+              처리 시작
+            </button>
+          </form>
+
+          <div class="job-summary" aria-live="polite">
+            <div class="summary-grid">
+              <div>
+                <span class="meta-label" data-i18n="jobNumber">작업 번호</span>
+                <strong id="job-id">-</strong>
+              </div>
+              <div>
+                <span class="meta-label" data-i18n="status">상태</span>
+                <strong id="job-status" data-status="idle">대기 중</strong>
+              </div>
+              <div>
+                <span class="meta-label" data-i18n="progress">진행률</span>
+                <strong id="job-progress">0%</strong>
+              </div>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span id="job-progress-bar"></span>
+            </div>
+            <p id="job-message" class="message-line" data-i18n="initialJobMessage">
+              영상과 참조 얼굴을 선택하면 처리를 시작할 수 있습니다.
+            </p>
+            <a id="download-link" class="download-button hidden" href="#" data-i18n="downloadResult"
+              >결과 영상 받기</a
+            >
+          </div>
+        </section>
+
+        <section class="work-panel realtime-panel" aria-labelledby="realtime-title">
+          <div class="section-header compact">
+            <div>
+              <p class="eyebrow" data-i18n="realtime">실시간</p>
+              <h2 id="realtime-title" data-i18n="realtimeTitle">실시간 미리보기</h2>
+            </div>
+            <span class="surface-badge" data-i18n="browserCamera">브라우저 카메라</span>
+          </div>
+
+          <div class="preview-grid">
+            <figure class="media-frame">
+              <video id="camera-video" autoplay muted playsinline></video>
+              <figcaption data-i18n="camera">카메라</figcaption>
+            </figure>
+            <figure class="media-frame">
+              <canvas id="camera-canvas"></canvas>
+              <figcaption data-i18n="processedPreview">처리 결과</figcaption>
+            </figure>
+          </div>
+
+          <div class="action-row">
+            <button id="session-button" class="secondary-button" type="button" data-i18n="createSession">
+              세션 생성
+            </button>
+            <button id="camera-button" class="primary-button" type="button" data-i18n="startCamera">
+              카메라 시작
+            </button>
+          </div>
+
+          <p id="realtime-message" class="notice-line" data-i18n="initialRealtimeMessage">
+            참조 얼굴을 선택한 뒤 세션을 만들면 실시간 처리를 볼 수 있습니다.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script src="/src/app.js" type="module"></script>
+  </body>
+</html>

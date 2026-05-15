@@ -1,0 +1,81 @@
+{
+  "mode": "blur",
+  "video": "samples/videos/akiyo_short.mp4",
+  "reference": null,
+  "output": "samples/outputs/akiyo_blur.mp4",
+  "detector": "YoloRegionDetector",
+  "face_matcher": "ArcFaceMatcher",
+  "tracker_enabled": true,
+  "settings": {
+    "detector_confidence": 0.35,
+    "face_match_threshold": 0.35,
+    "face_blur_padding": 0.18,
+    "plate_blur_padding": 0.12,
+    "tracker_iou_threshold": 0.3,
+    "tracker_smoothing_alpha": 0.55,
+    "tracker_max_missing": 2
+  },
+  "elapsed_seconds": 2.380438882857561,
+  "effective_fps": 37.80815405433173,
+  "stats": {
+    "frames": 90,
+    "detections": 90,
+    "tracked_detections": 90,
+    "retained_missing_detections": 0,
+    "preserved_faces": 0,
+    "overlaid_faces": 0,
+    "width": 352,
+    "height": 288
+  },
+  "identity_score_diagnostics": {
+    "sample_count": 0,
+    "threshold": 0.35,
+    "skipped": "no reference image"
+  },
+  "progress": [
+    {
+      "progress": 1,
+      "message": "Processed frame 1 / 90"
+    },
+    {
+      "progress": 11,
+      "message": "Processed frame 10 / 90"
+    },
+    {
+      "progress": 22,
+      "message": "Processed frame 20 / 90"
+    },
+    {
+      "progress": 33,
+      "message": "Processed frame 30 / 90"
+    },
+    {
+      "progress": 44,
+      "message": "Processed frame 40 / 90"
+    },
+    {
+      "progress": 55,
+      "message": "Processed frame 50 / 90"
+    },
+    {
+      "progress": 66,
+      "message": "Processed frame 60 / 90"
+    },
+    {
+      "progress": 77,
+      "message": "Processed frame 70 / 90"
+    },
+    {
+      "progress": 88,
+      "message": "Processed frame 80 / 90"
+    },
+    {
+      "progress": 99,
+      "message": "Processed frame 90 / 90"
+    },
+    {
+      "progress": 100,
+      "message": "Blur video result ready"
+    }
+  ]
+}

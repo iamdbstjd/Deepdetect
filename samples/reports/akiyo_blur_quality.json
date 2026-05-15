@@ -1,0 +1,11 @@
+{
+  "original": "samples/videos/akiyo_short.mp4",
+  "blurred": "samples/outputs/akiyo_blur.mp4",
+  "frames_scanned": 90,
+  "face_detections": 90,
+  "average_original_sharpness": 990.2384114949944,
+  "average_blurred_sharpness": 19.491916658366197,
+  "average_sharpness_reduction": 0.9804890231162953,
+  "min_sharpness_reduction": 0.9534922505117355,
+  "max_sharpness_reduction": 0.9918791724159999
+}

@@ -1,0 +1,235 @@
+# deepdetect
+
+[English](README.md) | [KR](README.ko.md)
+
+deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고 익명화하는 웹 서비스입니다. YOLO로 얼굴/번호판 위치를 찾고, 선택한 모드에 따라 블러 처리, 참조 인물 원본 유지, 캐릭터/이모지 오버레이를 적용합니다.
+
+현재 구현은 저장 영상 처리 품질을 우선하며, 브라우저 카메라 기반 실시간 미리보기 기능도 제공합니다.
+
+## 주요 기능
+
+- 영상 파일과 참조 얼굴 이미지 업로드
+- YOLO 기반 얼굴/번호판 감지
+- 감지된 개인정보 영역 전체 블러 처리
+- 참조 인물은 원본 유지하고 다른 얼굴은 블러 처리
+- 참조 인물 얼굴을 glossy 이모지/캐릭터로 대체
+- IoU tracker와 box smoothing으로 캐릭터 흔들림 완화
+- 브라우저 카메라 실시간 미리보기
+- 결과 영상 다운로드
+- 웹 UI KR/ENG 전환
+
+## 샘플 검증 결과
+
+샘플 QA는 공개 Xiph Derf `akiyo` 테스트 영상을 사용했습니다.
+
+| 항목 | 결과 |
+|---|---:|
+| 처리한 샘플 프레임 | 90 |
+| blur 모드 얼굴 감지 | 90 / 90 |
+| blur 후 얼굴 영역 평균 선명도 감소율 | 98.05% |
+| blur 후 얼굴 영역 최소 선명도 감소율 | 95.35% |
+| preserve 모드 참조 인물 유지 | 90 / 90 |
+| character 모드 이모지 오버레이 | 90 / 90 |
+
+산출물:
+
+- Blur 결과: [samples/outputs/akiyo_blur.mp4](samples/outputs/akiyo_blur.mp4)
+- Preserve 결과: [samples/outputs/akiyo_preserve.mp4](samples/outputs/akiyo_preserve.mp4)
+- Character 결과: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
+- 시각 QA 이미지: [samples/reports/akiyo_contact_sheet.jpg](samples/reports/akiyo_contact_sheet.jpg)
+- Blur 수치 리포트: [samples/reports/akiyo_blur_quality.json](samples/reports/akiyo_blur_quality.json)
+
+## 아키텍처
+
+```mermaid
+flowchart TD
+    User[사용자] --> WebUI[정적 Web UI<br/>영상 업로드, 참조 이미지 업로드, 모드 선택]
+    WebUI --> JobsAPI[FastAPI Jobs API]
+    WebUI --> RealtimeAPI[FastAPI Realtime API]
+
+    JobsAPI --> JobService[Job Service<br/>메타데이터, 상태, 취소]
+    JobService --> Queue[Background Job Queue]
+    Queue --> Pipeline[BlurVideoPipeline]
+
+    RealtimeAPI --> RealtimeSession[Realtime Session Service]
+    RealtimeSession --> FrameProcessor[Realtime Frame Processor]
+    FrameProcessor --> VisionCore[공유 Vision Core]
+    Pipeline --> VisionCore
+
+    VisionCore --> Detector[YOLO Region Detector<br/>얼굴과 번호판]
+    VisionCore --> Matcher[ArcFace Matcher<br/>참조 인물 판별]
+    VisionCore --> Tracker[IoU Tracker<br/>smoothing과 짧은 miss 유지]
+    VisionCore --> Renderer[Privacy Renderer<br/>blur와 character overlay]
+
+    Renderer --> OutputVideo[처리된 MP4]
+    Renderer --> OutputFrame[처리된 JPEG Frame]
+
+    JobService --> Storage[(Storage<br/>uploads, references, results, temp)]
+    OutputVideo --> Storage
+    Storage --> Download[결과 다운로드]
+    Download --> User
+    OutputFrame --> WebUI
+```
+
+## 처리 모드
+
+| Mode | 참조 인물 | 다른 얼굴 | 번호판 |
+|---|---|---|---|
+| `blur` | 블러 | 블러 | 블러 |
+| `preserve` | 원본 유지 | 블러 | 블러 |
+| `character` | 이모지/캐릭터 대체 | 블러 | 블러 |
+
+웹 UI의 기본 제품 흐름은 `preserve`, `character`를 제공합니다. `blur` 모드는 QA 도구와 파이프라인에서 사용할 수 있습니다.
+
+## 프로젝트 구조
+
+```text
+backend/
+  app/
+    api/          FastAPI routes
+    core/         settings, paths, security helpers
+    services/     jobs, queue, realtime processing
+    vision/       YOLO detector, matcher, tracker, renderer, pipeline
+  tests/          unittest test suite
+frontend/
+  index.html      deepdetect UI
+  src/app.js      upload, realtime, KR/ENG language toggle
+  styles/app.css  responsive product styling
+models/
+  yolo/           face detector weights
+  plate/          license plate detector weights
+  face/           ArcFace ONNX model
+samples/
+  videos/         sample source and short clips
+  outputs/        processed demo videos
+  reports/        QA reports and screenshots
+tools/
+  prepare_sample.py
+  run_sample_pipeline.py
+  export_sample_contact_sheet.py
+  measure_blur_quality.py
+```
+
+## 요구사항
+
+- Python 3.11+
+- OpenCV
+- FastAPI
+- Ultralytics YOLO
+- `models/` 아래 모델 파일
+
+의존성 설치:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+## 실행
+
+```bash
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+브라우저 접속:
+
+```text
+http://127.0.0.1:8000
+```
+
+## 모델 파일
+
+기본 모델 경로:
+
+```text
+models/yolo/face_detector.pt
+models/plate/license_plate_detector.pt
+models/face/w600k_r50.onnx
+```
+
+다운로드된 모델 목록과 SHA256은 [docs/model-inventory.md](docs/model-inventory.md)에 정리되어 있습니다.
+
+주요 환경변수:
+
+```bash
+EMBED_DETECTOR_MODE=auto
+EMBED_YOLO_FACE_MODEL=models/yolo/face_detector.pt
+EMBED_YOLO_PLATE_MODEL=models/plate/license_plate_detector.pt
+
+EMBED_FACE_MATCHER_MODE=arcface
+EMBED_FACE_MATCH_MODEL=models/face/w600k_r50.onnx
+EMBED_FACE_MATCH_THRESHOLD=0.35
+
+EMBED_TRACKER_ENABLED=true
+EMBED_TRACKER_IOU_THRESHOLD=0.3
+EMBED_TRACKER_SMOOTHING_ALPHA=0.55
+EMBED_TRACKER_MAX_MISSING=2
+```
+
+## 샘플 QA 실행
+
+샘플 준비:
+
+```bash
+python tools/prepare_sample.py --max-frames 90
+```
+
+모드별 실행:
+
+```bash
+python tools/run_sample_pipeline.py --mode blur --output samples/outputs/akiyo_blur.mp4 --report samples/reports/akiyo_blur.json
+python tools/run_sample_pipeline.py --mode preserve --output samples/outputs/akiyo_preserve.mp4 --report samples/reports/akiyo_preserve.json
+python tools/run_sample_pipeline.py --mode character --output samples/outputs/akiyo_character.mp4 --report samples/reports/akiyo_character.json
+```
+
+시각 QA와 blur 수치 측정:
+
+```bash
+python tools/export_sample_contact_sheet.py
+python tools/measure_blur_quality.py
+```
+
+## API 요약
+
+| Method | Path | 목적 |
+|---|---|---|
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/jobs/video` | 영상/참조 이미지 업로드와 작업 생성 |
+| `GET` | `/api/jobs/{job_id}` | 작업 상태 조회 |
+| `POST` | `/api/jobs/{job_id}/cancel` | 작업 취소 |
+| `GET` | `/api/jobs/{job_id}/result` | 결과 영상 다운로드 |
+| `POST` | `/api/realtime/sessions` | 실시간 처리 세션 생성 |
+| `POST` | `/api/realtime/frame` | 카메라 프레임 1장 처리 |
+| `WS` | `/api/realtime/sessions/{session_id}/ws` | 실시간 websocket frame endpoint |
+
+## 테스트
+
+```bash
+python -m unittest discover -s backend/tests -v
+node --check frontend/src/app.js
+```
+
+현재 검증 상태:
+
+- 백엔드 테스트 26개 통과
+- 프론트엔드 문법 검사 통과
+- Playwright로 데스크톱/모바일 UI 렌더링 확인
+- 샘플 영상 기준 blur 결과를 시각 자료와 선명도 감소율로 확인
+
+## 한계
+
+- 너무 작거나 멀거나 심하게 가려진 얼굴은 놓칠 수 있습니다.
+- 번호판 처리 품질은 선택한 번호판 YOLO 모델과 대상 지역/영상 품질에 영향을 받습니다.
+- 참조 인물 판별은 시연/서비스 품질 목적이며 보안 인증 수준의 얼굴 인증이 아닙니다.
+- Apple 이모지 asset은 포함하지 않습니다. 기본 이모지는 자체 생성한 glossy 스타일 asset입니다.
+
+## Roadmap
+
+- 번호판이 잘 보이는 차량 샘플을 추가해 plate blur QA 수행
+- 웹 UI에 결과 영상 미리보기 추가
+- 사용자 업로드 캐릭터 asset 지원
+- frame skipping, batching, ONNX/TensorRT/OpenVINO로 실시간 처리량 개선
+- 최종 임베디드 보드용 실행 프로파일 추가
+
+## License
+
+MIT License입니다. 자세한 내용은 [LICENSE](LICENSE)를 확인하세요.

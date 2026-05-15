@@ -1,0 +1,25 @@
+{
+  "source": "samples/videos/akiyo_cif.y4m",
+  "output_video": "samples/videos/akiyo_short.mp4",
+  "reference_image": "samples/references/akiyo_reference.jpg",
+  "frames_written": 90,
+  "fps": 29.97002997002997,
+  "width": 352,
+  "height": 288,
+  "detector": "YoloRegionDetector",
+  "detector_confidence": 0.35,
+  "face_detection_frames": 90,
+  "reference_selection": "yolo",
+  "reference_detection": {
+    "kind": "face",
+    "x1": 143,
+    "y1": 74,
+    "x2": 217,
+    "y2": 186,
+    "confidence": 0.904521644115448,
+    "label": "face",
+    "track_id": null,
+    "observed": true,
+    "missed": 0
+  }
+}
