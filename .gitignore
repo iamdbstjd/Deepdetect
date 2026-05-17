@@ -13,6 +13,7 @@ plan.md
 docs/phase*.md
 docs/model-inventory.md
 docs/face-embedding.md
+samples/qa-template.md
 
 storage/uploads/*
 !storage/uploads/.gitkeep

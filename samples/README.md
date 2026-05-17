@@ -11,7 +11,6 @@ samples/
     sample_02.mp4
   references/
     reference_01.jpg
-  qa-template.md
 ```
 
 주의:
