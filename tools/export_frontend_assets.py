@@ -21,11 +21,11 @@ class FaceRegion:
 
 
 FACE_REGIONS = [
-    FaceRegion((188, 360, 430, 612), 0.91),
-    FaceRegion((260, 66, 460, 292), 0.88),
-    FaceRegion((520, 384, 704, 574), 0.90),
-    FaceRegion((754, 338, 942, 526), 0.89),
-    FaceRegion((836, 38, 1096, 306), 0.94, is_reference=True),
+    FaceRegion((176, 352, 430, 556), 0.91),
+    FaceRegion((272, 76, 426, 254), 0.88),
+    FaceRegion((512, 366, 692, 542), 0.90),
+    FaceRegion((756, 326, 940, 504), 0.89),
+    FaceRegion((852, 44, 1070, 276), 0.94, is_reference=True),
 ]
 
 
@@ -89,44 +89,49 @@ def blur_box(image: np.ndarray, box: tuple[int, int, int, int]) -> None:
     image[y1:y2, x1:x2] = cv2.addWeighted(blurred, 0.72, pixelated, 0.28, 0)
 
 
-def draw_privacy_mask(image: np.ndarray, box: tuple[int, int, int, int]) -> None:
+def draw_smile_emoji(image: np.ndarray, box: tuple[int, int, int, int]) -> None:
     x1, y1, x2, y2 = clip_box(box, image.shape[1], image.shape[0])
     width = x2 - x1
     height = y2 - y1
     center = (x1 + width // 2, y1 + height // 2)
-    axes = (max(36, int(width * 0.56)), max(42, int(height * 0.52)))
+    radius = max(44, int(max(width, height) * 0.58))
 
     overlay = image.copy()
-    teal = (114, 124, 12)
-    teal_dark = (64, 78, 8)
-    white = (245, 255, 255)
-    cv2.ellipse(overlay, center, axes, 0, 0, 360, teal, -1)
-    cv2.ellipse(overlay, center, axes, 0, 0, 360, white, 5)
-    image[:] = cv2.addWeighted(overlay, 0.94, image, 0.06, 0)
+    cv2.circle(overlay, center, radius, (24, 207, 255), -1, lineType=cv2.LINE_AA)
+    cv2.circle(overlay, (center[0] - radius // 4, center[1] - radius // 4), radius // 2, (92, 235, 255), -1)
+    image[:] = cv2.addWeighted(overlay, 0.96, image, 0.04, 0)
 
-    eye_y = center[1] - int(axes[1] * 0.18)
-    eye_dx = int(axes[0] * 0.32)
-    eye_radius = max(7, int(axes[0] * 0.09))
-    cv2.circle(image, (center[0] - eye_dx, eye_y), eye_radius, white, -1)
-    cv2.circle(image, (center[0] + eye_dx, eye_y), eye_radius, white, -1)
+    edge = (18, 142, 224)
+    dark = (34, 41, 49)
+    white = (255, 255, 255)
+    cv2.circle(image, center, radius, edge, max(4, radius // 24), lineType=cv2.LINE_AA)
     cv2.ellipse(
         image,
-        (center[0], center[1] + int(axes[1] * 0.16)),
-        (int(axes[0] * 0.34), int(axes[1] * 0.22)),
+        (center[0], center[1] - radius // 3),
+        (int(radius * 0.62), int(radius * 0.26)),
         0,
-        12,
-        168,
-        white,
-        5,
+        190,
+        350,
+        (116, 246, 255),
+        max(4, radius // 18),
+        cv2.LINE_AA,
     )
-    cv2.putText(
+    eye_y = center[1] - int(radius * 0.18)
+    eye_dx = int(radius * 0.32)
+    eye_size = (max(8, radius // 8), max(10, radius // 6))
+    cv2.ellipse(image, (center[0] - eye_dx, eye_y), eye_size, 0, 0, 360, dark, -1, cv2.LINE_AA)
+    cv2.ellipse(image, (center[0] + eye_dx, eye_y), eye_size, 0, 0, 360, dark, -1, cv2.LINE_AA)
+    cv2.circle(image, (center[0] - eye_dx - radius // 18, eye_y - radius // 20), max(2, radius // 28), white, -1)
+    cv2.circle(image, (center[0] + eye_dx - radius // 18, eye_y - radius // 20), max(2, radius // 28), white, -1)
+    cv2.ellipse(
         image,
-        "d",
-        (center[0] - int(axes[0] * 0.14), center[1] + int(axes[1] * 0.62)),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        max(1.0, axes[0] / 70),
-        teal_dark,
-        max(3, int(axes[0] * 0.055)),
+        (center[0], center[1] + int(radius * 0.15)),
+        (int(radius * 0.44), int(radius * 0.32)),
+        0,
+        18,
+        162,
+        dark,
+        max(6, radius // 13),
         cv2.LINE_AA,
     )
 
@@ -184,8 +189,8 @@ def make_showcase(mode: str) -> np.ndarray:
             draw_detection_box(canvas, box, "REFERENCE KEEP", green)
             continue
         if mode == "character" and region.is_reference:
-            draw_privacy_mask(canvas, box)
-            draw_detection_box(canvas, box, "PRIVACY MASK", green)
+            draw_smile_emoji(canvas, box)
+            draw_detection_box(canvas, box, "SMILE EMOJI", green)
             continue
         blur_box(canvas, box)
         draw_detection_box(canvas, box, "ANONYMIZED", orange)
@@ -199,7 +204,7 @@ def write_contact_sheet(images: dict[str, np.ndarray]) -> None:
         "original": "DETECT",
         "blur": "BLUR AFTER",
         "preserve": "REFERENCE KEEP",
-        "character": "PRIVACY MASK",
+        "character": "SMILE EMOJI",
     }
     for left_key, right_key in [("original", "blur"), ("preserve", "character")]:
         row_images = []

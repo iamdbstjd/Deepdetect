@@ -34,11 +34,11 @@ Preserve mode result:
 - Retained missing detections: 0
 - Effective processing speed: 3.59 FPS on this machine
 
-Character mask mode result:
+Character mode result:
 - Frames processed: 90
 - Raw detections: 90
 - Tracked detections: 90
-- Privacy mask overlays: 90
+- Emoji overlays: 90
 - Retained missing detections: 0
 - Effective processing speed: 3.50 FPS on this machine
 
@@ -53,7 +53,7 @@ Identity score diagnostics:
 Manual visual check:
 - Blur mode makes the visible face non-identifiable in the sampled frames.
 - Preserve mode keeps the reference face unblurred across the sampled frames.
-- The `character` mode places the default privacy mask consistently on the face position without stretching it to the face box.
+- The `character` mode places the default smile emoji consistently on the face position without stretching it to the face box.
 - No number plate is present in this sample, so plate blur still needs a separate traffic/car sample.
 
 Next tuning target:
