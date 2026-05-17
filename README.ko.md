@@ -170,12 +170,6 @@ models/face/w600k_r50.onnx
 | 번호판 감지 | [CCPD](https://github.com/detectRecog/ccpd) | blur, rotation, tilt, challenge subset을 포함하는 대규모 번호판 detection/recognition 데이터셋입니다. |
 | 번호판 감지 | [UFPR-ALPR](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/) | YOLO detector 기반 ALPR 연구와 연결된 차량/번호판 데이터셋입니다. |
 
-## Fine-Tuning 목표 로드맵
-
-아래 그래프는 향후 YOLO fine-tuning을 진행할 때의 목표 개선 계획입니다. pretrained 모델 baseline 70%에서 시작해 데이터 정리, 1차 fine-tuning, hard-case QA를 거쳐 91%를 목표로 잡았습니다. 이 그래프는 계획용이며, 완료된 학습 결과가 아닙니다.
-
-![YOLO fine-tuning target roadmap](samples/reports/fine_tuning_target_roadmap.png)
-
 주요 환경변수:
 
 ```bash
