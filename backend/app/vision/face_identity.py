@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import threading
 from typing import Protocol
 
 import cv2
@@ -78,10 +79,17 @@ class HistogramFaceMatcher:
 
 
 class ArcFacePreparedMatcher:
-    def __init__(self, reference_embedding: np.ndarray, net: cv2.dnn.Net, threshold: float):
+    def __init__(
+        self,
+        reference_embedding: np.ndarray,
+        net: cv2.dnn.Net,
+        threshold: float,
+        lock: threading.RLock,
+    ):
         self.reference_embedding = reference_embedding
         self.net = net
         self.threshold = threshold
+        self._lock = lock
 
     def match_score(self, frame: np.ndarray, detection: Detection) -> float:
         height, width = frame.shape[:2]
@@ -91,7 +99,8 @@ class ArcFacePreparedMatcher:
         crop = frame[box.y1 : box.y2, box.x1 : box.x2]
         if crop.size == 0:
             return 0.0
-        embedding = _arcface_embedding(self.net, crop)
+        with self._lock:
+            embedding = _arcface_embedding(self.net, crop)
         return _cosine_similarity(self.reference_embedding, embedding)
 
     def is_match(self, frame: np.ndarray, detection: Detection) -> bool:
@@ -108,15 +117,19 @@ class ArcFaceMatcher:
             self.net = cv2.dnn.readNetFromONNX(str(model_path))
         except cv2.error as exc:
             raise FaceIdentityError(f"cannot load face embedding model: {model_path}") from exc
+        self._lock = threading.RLock()
 
     def prepare(self, reference_image_path: Path) -> PreparedFaceMatcher:
         reference = cv2.imread(str(reference_image_path))
         if reference is None or reference.size == 0:
             raise FaceIdentityError(f"cannot read reference image: {reference_image_path}")
+        with self._lock:
+            reference_embedding = _arcface_embedding(self.net, reference)
         return ArcFacePreparedMatcher(
-            reference_embedding=_arcface_embedding(self.net, reference),
+            reference_embedding=reference_embedding,
             net=self.net,
             threshold=self.threshold,
+            lock=self._lock,
         )
 
 

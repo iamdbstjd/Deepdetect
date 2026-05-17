@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import threading
 
 import cv2
 import numpy as np
@@ -26,6 +27,7 @@ class YoloRegionDetector:
             raise DetectorConfigurationError("ultralytics is not installed") from exc
 
         self.confidence = confidence
+        self._lock = threading.RLock()
         self._models: list[tuple[str, object]] = []
         if face_model_path and face_model_path.exists():
             self._models.append(("face", YOLO(str(face_model_path))))
@@ -37,7 +39,8 @@ class YoloRegionDetector:
     def detect(self, frame: np.ndarray) -> list[Detection]:
         detections: list[Detection] = []
         for kind, model in self._models:
-            results = model.predict(frame, conf=self.confidence, verbose=False)
+            with self._lock:
+                results = model.predict(frame, conf=self.confidence, verbose=False)
             for result in results:
                 boxes = getattr(result, "boxes", None)
                 if boxes is None:
@@ -118,4 +121,3 @@ def build_detector(settings: Settings) -> RegionDetector:
     raise DetectorConfigurationError(
         f"unknown detector mode: {settings.detector_mode}; expected auto, yolo, haar, or noop"
     )
-
