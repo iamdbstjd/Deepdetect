@@ -6,6 +6,10 @@ deepdetect is a privacy-first video anonymization web service. It detects faces 
 
 The current build focuses on high-quality saved-video processing, with a browser-camera realtime preview for demonstrations.
 
+## UI Preview
+
+![deepdetect English UI](samples/reports/ui_en.png)
+
 ## Features
 
 - Upload a video and a reference face image.
@@ -37,10 +41,7 @@ Artifacts:
 - Preserve result: [samples/outputs/akiyo_preserve.mp4](samples/outputs/akiyo_preserve.mp4)
 - Character result: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
 - Visual QA sheet: [samples/reports/akiyo_contact_sheet.jpg](samples/reports/akiyo_contact_sheet.jpg)
-- Sample QA graph: [samples/reports/performance_trend.png](samples/reports/performance_trend.png)
 - Blur metrics: [samples/reports/akiyo_blur_quality.json](samples/reports/akiyo_blur_quality.json)
-
-![deepdetect sample QA metrics](samples/reports/performance_trend.png)
 
 ## Architecture
 
@@ -141,15 +142,6 @@ http://127.0.0.1:8000
 
 ## Model Files
 
-deepdetect currently uses two YOLO model files:
-
-| Model | Path | Current role |
-|---|---|---|
-| YOLO face detector | `models/yolo/face_detector.pt` | Detect face bounding boxes |
-| YOLO license plate detector | `models/plate/license_plate_detector.pt` | Detect license plate bounding boxes |
-
-No custom YOLO fine-tuning has been performed in this repository yet. The model files are pretrained weights documented in [docs/model-inventory.md](docs/model-inventory.md).
-
 Default model paths:
 
 ```text
@@ -159,16 +151,6 @@ models/face/w600k_r50.onnx
 ```
 
 The downloaded model inventory and hashes are documented in [docs/model-inventory.md](docs/model-inventory.md).
-
-## Future Fine-Tuning Datasets
-
-These datasets are suitable candidates for a future, honest fine-tuning or benchmark pass. They are not claimed as training data for the current uploaded model weights.
-
-| Area | Dataset | Why it is relevant |
-|---|---|---|
-| Face detection | [WIDER FACE](http://shuoyang1213.me/WIDERFACE/) | Face detection benchmark with large variation in scale, pose, and occlusion. TensorFlow Datasets documents 32,203 images and 393,703 labeled faces. |
-| License plate detection | [CCPD](https://github.com/detectRecog/ccpd) | Large license plate detection/recognition dataset with challenging subsets such as blur, rotation, tilt, and challenge images. |
-| License plate detection | [UFPR-ALPR](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/) | Vehicle and license plate dataset associated with ALPR research using the YOLO detector. |
 
 Useful environment variables:
 
