@@ -617,6 +617,12 @@ h2 {
   color: var(--text);
 }
 
+.select-field select:disabled {
+  cursor: not-allowed;
+  background: #f7fafc;
+  color: var(--muted);
+}
+
 .primary-button,
 .secondary-button,
 .download-button {

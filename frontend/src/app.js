@@ -467,6 +467,8 @@ function getSelectedMode() {
 function syncModeState() {
   const isCharacterMode = getSelectedMode() === "character";
   characterField.classList.toggle("is-muted", !isCharacterMode);
+  characterField.setAttribute("aria-disabled", String(!isCharacterMode));
+  characterInput.disabled = !isCharacterMode;
   const titleKey = isCharacterMode ? "selectedCharacterTitle" : "selectedPreserveTitle";
   const copyKey = isCharacterMode ? "selectedCharacterCopy" : "selectedPreserveCopy";
   selectedModeTitle.dataset.i18n = titleKey;
