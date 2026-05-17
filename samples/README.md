@@ -30,4 +30,5 @@ python tools/prepare_sample.py --max-frames 90
 python tools/run_sample_pipeline.py --mode preserve --output samples/outputs/akiyo_preserve.mp4 --report samples/reports/akiyo_preserve.json
 python tools/run_sample_pipeline.py --mode character --output samples/outputs/akiyo_character.mp4 --report samples/reports/akiyo_character.json
 python tools/export_sample_contact_sheet.py
+python tools/export_performance_chart.py
 ```

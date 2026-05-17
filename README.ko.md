@@ -37,7 +37,10 @@ deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고
 - Preserve 결과: [samples/outputs/akiyo_preserve.mp4](samples/outputs/akiyo_preserve.mp4)
 - Character 결과: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
 - 시각 QA 이미지: [samples/reports/akiyo_contact_sheet.jpg](samples/reports/akiyo_contact_sheet.jpg)
+- 샘플 QA 그래프: [samples/reports/performance_trend.png](samples/reports/performance_trend.png)
 - Blur 수치 리포트: [samples/reports/akiyo_blur_quality.json](samples/reports/akiyo_blur_quality.json)
+
+![deepdetect sample QA metrics](samples/reports/performance_trend.png)
 
 ## 아키텍처
 
@@ -138,6 +141,15 @@ http://127.0.0.1:8000
 
 ## 모델 파일
 
+deepdetect는 현재 YOLO 모델 파일 2개를 사용합니다.
+
+| 모델 | 경로 | 현재 역할 |
+|---|---|---|
+| YOLO face detector | `models/yolo/face_detector.pt` | 얼굴 bounding box 감지 |
+| YOLO license plate detector | `models/plate/license_plate_detector.pt` | 번호판 bounding box 감지 |
+
+이 repository에서는 아직 YOLO 커스텀 fine-tuning을 수행하지 않았습니다. 현재 모델 파일은 [docs/model-inventory.md](docs/model-inventory.md)에 정리한 pretrained weight입니다.
+
 기본 모델 경로:
 
 ```text
@@ -147,6 +159,16 @@ models/face/w600k_r50.onnx
 ```
 
 다운로드된 모델 목록과 SHA256은 [docs/model-inventory.md](docs/model-inventory.md)에 정리되어 있습니다.
+
+## 향후 Fine-Tuning 후보 데이터셋
+
+아래 데이터셋은 향후 정직한 fine-tuning 또는 benchmark에 사용할 수 있는 후보입니다. 현재 업로드된 모델 weight가 이 데이터셋으로 학습되었다고 주장하지 않습니다.
+
+| 영역 | 데이터셋 | 관련성 |
+|---|---|---|
+| 얼굴 감지 | [WIDER FACE](http://shuoyang1213.me/WIDERFACE/) | scale, pose, occlusion 변화가 큰 얼굴 감지 benchmark입니다. TensorFlow Datasets 기준 32,203장 이미지와 393,703개 얼굴 annotation이 문서화되어 있습니다. |
+| 번호판 감지 | [CCPD](https://github.com/detectRecog/ccpd) | blur, rotation, tilt, challenge subset을 포함하는 대규모 번호판 detection/recognition 데이터셋입니다. |
+| 번호판 감지 | [UFPR-ALPR](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/) | YOLO detector 기반 ALPR 연구와 연결된 차량/번호판 데이터셋입니다. |
 
 주요 환경변수:
 
