@@ -33,7 +33,7 @@ renderer = PrivacyRenderer(
     face_padding=settings.face_blur_padding,
     plate_padding=settings.plate_blur_padding,
 )
-face_matcher = build_face_matcher(settings)
+face_matcher = build_face_matcher(settings, reference_detector=detector)
 character_store = CharacterAssetStore(settings.project_root / "assets" / "characters")
 tracker = (
     DetectionTracker(

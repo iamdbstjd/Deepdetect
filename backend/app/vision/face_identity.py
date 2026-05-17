@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 
 from backend.app.core.config import Settings
-from backend.app.vision.detections import Detection
+from backend.app.vision.detections import Detection, RegionDetector
 
 
 class FaceIdentityError(RuntimeError):
@@ -68,13 +68,19 @@ class HistogramFaceMatcher:
     until a real face embedding model is added.
     """
 
-    def __init__(self, threshold: float = 0.92):
+    def __init__(
+        self,
+        threshold: float = 0.92,
+        reference_detector: RegionDetector | None = None,
+    ):
         self.threshold = threshold
+        self.reference_detector = reference_detector
 
     def prepare(self, reference_image_path: Path) -> PreparedFaceMatcher:
         reference = cv2.imread(str(reference_image_path))
         if reference is None or reference.size == 0:
             raise FaceIdentityError(f"cannot read reference image: {reference_image_path}")
+        reference = _reference_face_crop(reference, self.reference_detector)
         return HistogramPreparedMatcher(_hsv_histogram(reference), self.threshold)
 
 
@@ -108,9 +114,15 @@ class ArcFacePreparedMatcher:
 
 
 class ArcFaceMatcher:
-    def __init__(self, model_path: Path, threshold: float = 0.35):
+    def __init__(
+        self,
+        model_path: Path,
+        threshold: float = 0.35,
+        reference_detector: RegionDetector | None = None,
+    ):
         self.model_path = model_path
         self.threshold = threshold
+        self.reference_detector = reference_detector
         if not model_path.exists():
             raise FaceIdentityError(f"face embedding model not found: {model_path}")
         try:
@@ -123,6 +135,7 @@ class ArcFaceMatcher:
         reference = cv2.imread(str(reference_image_path))
         if reference is None or reference.size == 0:
             raise FaceIdentityError(f"cannot read reference image: {reference_image_path}")
+        reference = _reference_face_crop(reference, self.reference_detector)
         with self._lock:
             reference_embedding = _arcface_embedding(self.net, reference)
         return ArcFacePreparedMatcher(
@@ -139,6 +152,30 @@ def _hsv_histogram(image: np.ndarray) -> np.ndarray:
     histogram = cv2.calcHist([hsv], [0, 1], None, [32, 32], [0, 180, 0, 256])
     cv2.normalize(histogram, histogram, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
     return histogram
+
+
+def _reference_face_crop(
+    image: np.ndarray,
+    detector: RegionDetector | None,
+) -> np.ndarray:
+    if detector is None:
+        return image
+    try:
+        detections = detector.detect(image)
+    except Exception:
+        return image
+    height, width = image.shape[:2]
+    face_boxes = [
+        detection.clipped(width, height, padding_ratio=0.08)
+        for detection in detections
+        if detection.kind == "face"
+    ]
+    valid_boxes = [box for box in face_boxes if box.is_valid]
+    if not valid_boxes:
+        return image
+    box = max(valid_boxes, key=lambda item: (item.x2 - item.x1) * (item.y2 - item.y1))
+    crop = image[box.y1 : box.y2, box.x1 : box.x2]
+    return crop if crop.size else image
 
 
 def _arcface_embedding(net: cv2.dnn.Net, image: np.ndarray) -> np.ndarray:
@@ -166,19 +203,26 @@ def _cosine_similarity(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.dot(left, right) / denominator)
 
 
-def build_face_matcher(settings: Settings) -> FaceIdentityMatcher:
+def build_face_matcher(
+    settings: Settings,
+    reference_detector: RegionDetector | None = None,
+) -> FaceIdentityMatcher:
     mode = settings.face_matcher_mode.lower()
     if mode == "disabled":
         return DisabledFaceMatcher()
     if mode == "histogram":
-        return HistogramFaceMatcher(settings.face_match_threshold)
+        return HistogramFaceMatcher(settings.face_match_threshold, reference_detector)
     if mode == "arcface":
         try:
             if not settings.face_match_model_path:
                 raise FaceIdentityError("face embedding model path is not configured")
-            return ArcFaceMatcher(settings.face_match_model_path, settings.face_match_threshold)
+            return ArcFaceMatcher(
+                settings.face_match_model_path,
+                settings.face_match_threshold,
+                reference_detector,
+            )
         except FaceIdentityError:
-            return HistogramFaceMatcher(0.92)
+            return HistogramFaceMatcher(0.92, reference_detector)
     raise FaceIdentityError(
         "unknown face matcher mode: "
         f"{settings.face_matcher_mode}; expected disabled, histogram, or arcface"

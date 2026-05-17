@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from backend.app.vision.detections import Detection
+from backend.app.vision.detections import Detection, StaticDetector
 from backend.app.vision.face_identity import ArcFaceMatcher, HistogramFaceMatcher
 
 
@@ -15,6 +15,18 @@ class FaceIdentityTests(unittest.TestCase):
         matcher = HistogramFaceMatcher(threshold=0.5).prepare(path)
 
         self.assertTrue(matcher.is_match(image, Detection("face", 0, 0, 112, 112, 1.0)))
+
+    def test_reference_detector_crops_reference_before_matching(self) -> None:
+        face = self._face_like_image()
+        reference = np.full((160, 160, 3), (0, 180, 0), dtype=np.uint8)
+        reference[24:136, 24:136] = face
+        path = self._write_image("hist_reference_with_background.jpg", reference)
+        matcher = HistogramFaceMatcher(
+            threshold=0.95,
+            reference_detector=StaticDetector([Detection("face", 24, 24, 136, 136, 1.0)]),
+        ).prepare(path)
+
+        self.assertTrue(matcher.is_match(face, Detection("face", 0, 0, 112, 112, 1.0)))
 
     def test_arcface_matcher_loads_and_scores_same_region(self) -> None:
         model_path = Path("models/face/w600k_r50.onnx")
@@ -44,4 +56,3 @@ class FaceIdentityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
