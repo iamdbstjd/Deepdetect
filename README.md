@@ -170,6 +170,12 @@ These datasets are suitable candidates for a future, honest fine-tuning or bench
 | License plate detection | [CCPD](https://github.com/detectRecog/ccpd) | Large license plate detection/recognition dataset with challenging subsets such as blur, rotation, tilt, and challenge images. |
 | License plate detection | [UFPR-ALPR](https://web.inf.ufpr.br/vri/databases/ufpr-alpr/) | Vehicle and license plate dataset associated with ALPR research using the YOLO detector. |
 
+## Target Fine-Tuning Roadmap
+
+The roadmap below shows the planned improvement target for a future YOLO fine-tuning pass. It starts from a 70% pretrained-model baseline and targets 91% after data curation, first-round fine-tuning, and hard-case QA. This is a planning graph, not a completed training result.
+
+![YOLO fine-tuning target roadmap](samples/reports/fine_tuning_target_roadmap.png)
+
 Useful environment variables:
 
 ```bash
