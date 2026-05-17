@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--blur", type=Path, default=Path("samples/outputs/akiyo_blur.mp4"))
     parser.add_argument("--preserve", type=Path, default=Path("samples/outputs/akiyo_preserve.mp4"))
     parser.add_argument("--character", type=Path, default=Path("samples/outputs/akiyo_character.mp4"))
-    parser.add_argument("--output", type=Path, default=Path("samples/reports/akiyo_contact_sheet.jpg"))
+    parser.add_argument("--output", type=Path, default=Path("samples/reports/sample_contact_sheet.jpg"))
     parser.add_argument("--frames", default="0,30,60,89")
     return parser.parse_args()
 

@@ -40,7 +40,7 @@ class ApiJobFlowTests(unittest.TestCase):
                     "video": ("sample.mp4", video_path.read_bytes(), "video/mp4"),
                     "reference_image": ("face.jpg", reference_bytes, "image/jpeg"),
                 },
-                data={"mode": "preserve", "character_id": "default_emoji"},
+                data={"mode": "preserve", "character_id": "default_mask"},
             )
             self.assertEqual(response.status_code, 200, response.text)
             payload = response.json()

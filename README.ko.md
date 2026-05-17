@@ -2,7 +2,7 @@
 
 [English](README.md) | [KR](README.ko.md)
 
-deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고 익명화하는 웹 서비스입니다. YOLO로 얼굴/번호판 위치를 찾고, 선택한 모드에 따라 블러 처리, 참조 인물 원본 유지, 캐릭터/이모지 오버레이를 적용합니다.
+deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고 익명화하는 웹 서비스입니다. YOLO로 얼굴/번호판 위치를 찾고, 선택한 모드에 따라 블러 처리, 참조 인물 원본 유지, 프라이버시 마스크 오버레이를 적용합니다.
 
 현재 구현은 저장 영상 처리 품질을 우선하며, 브라우저 카메라 기반 실시간 미리보기 기능도 제공합니다.
 
@@ -16,8 +16,8 @@ deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고
 - YOLO 기반 얼굴/번호판 감지
 - 감지된 개인정보 영역 전체 블러 처리
 - 참조 인물은 원본 유지하고 다른 얼굴은 블러 처리
-- 참조 인물 얼굴을 glossy 이모지/캐릭터로 대체
-- IoU tracker와 box smoothing으로 캐릭터 흔들림 완화
+- 참조 인물 얼굴을 deepdetect 프라이버시 마스크로 대체
+- IoU tracker와 box smoothing으로 프라이버시 마스크 흔들림 완화
 - 브라우저 카메라 실시간 미리보기
 - 결과 영상 다운로드
 - 웹 UI KR/ENG 전환
@@ -33,14 +33,14 @@ deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고
 | blur 후 얼굴 영역 평균 선명도 감소율 | 98.05% |
 | blur 후 얼굴 영역 최소 선명도 감소율 | 95.35% |
 | preserve 모드 참조 인물 유지 | 90 / 90 |
-| character 모드 이모지 오버레이 | 90 / 90 |
+| character 모드 프라이버시 마스크 오버레이 | 90 / 90 |
 
 산출물:
 
 - Blur 결과: [samples/outputs/akiyo_blur.mp4](samples/outputs/akiyo_blur.mp4)
 - Preserve 결과: [samples/outputs/akiyo_preserve.mp4](samples/outputs/akiyo_preserve.mp4)
-- Character 결과: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
-- 시각 QA 이미지: [samples/reports/akiyo_contact_sheet.jpg](samples/reports/akiyo_contact_sheet.jpg)
+- 프라이버시 마스크 결과: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
+- 프론트 쇼케이스 이미지: [samples/reports/group_showcase_contact_sheet.jpg](samples/reports/group_showcase_contact_sheet.jpg)
 - Blur 수치 리포트: [samples/reports/akiyo_blur_quality.json](samples/reports/akiyo_blur_quality.json)
 
 ## 아키텍처
@@ -63,7 +63,7 @@ flowchart TD
     VisionCore --> Detector[YOLO Region Detector<br/>얼굴과 번호판]
     VisionCore --> Matcher[ArcFace Matcher<br/>참조 인물 판별]
     VisionCore --> Tracker[IoU Tracker<br/>smoothing과 짧은 miss 유지]
-    VisionCore --> Renderer[Privacy Renderer<br/>blur와 character overlay]
+    VisionCore --> Renderer[Privacy Renderer<br/>blur와 privacy mask overlay]
 
     Renderer --> OutputVideo[처리된 MP4]
     Renderer --> OutputFrame[처리된 JPEG Frame]
@@ -81,7 +81,7 @@ flowchart TD
 |---|---|---|---|
 | `blur` | 블러 | 블러 | 블러 |
 | `preserve` | 원본 유지 | 블러 | 블러 |
-| `character` | 이모지/캐릭터 대체 | 블러 | 블러 |
+| `character` | 프라이버시 마스크 대체 | 블러 | 블러 |
 
 웹 UI의 기본 제품 흐름은 `preserve`, `character`를 제공합니다. `blur` 모드는 QA 도구와 파이프라인에서 사용할 수 있습니다.
 
@@ -224,13 +224,13 @@ node --check frontend/src/app.js
 - 너무 작거나 멀거나 심하게 가려진 얼굴은 놓칠 수 있습니다.
 - 번호판 처리 품질은 선택한 번호판 YOLO 모델과 대상 지역/영상 품질에 영향을 받습니다.
 - 참조 인물 판별은 시연/서비스 품질 목적이며 보안 인증 수준의 얼굴 인증이 아닙니다.
-- Apple 이모지 asset은 포함하지 않습니다. 기본 이모지는 자체 생성한 glossy 스타일 asset입니다.
+- Apple 이모지 asset은 포함하지 않습니다. 기본 오버레이는 자체 생성한 deepdetect 프라이버시 마스크입니다.
 
 ## Roadmap
 
 - 번호판이 잘 보이는 차량 샘플을 추가해 plate blur QA 수행
 - 웹 UI에 결과 영상 미리보기 추가
-- 사용자 업로드 캐릭터 asset 지원
+- 사용자 업로드 마스크 asset 지원
 - frame skipping, batching, ONNX/TensorRT/OpenVINO로 실시간 처리량 개선
 - 최종 임베디드 보드용 실행 프로파일 추가
 

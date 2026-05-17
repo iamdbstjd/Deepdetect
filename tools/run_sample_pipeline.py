@@ -118,7 +118,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--mode", choices=("blur", "preserve", "character"), default="preserve")
-    parser.add_argument("--character-id", default="default_emoji")
+    parser.add_argument("--character-id", default="default_mask")
     parser.add_argument("--score-frames", type=int, default=30)
     return parser.parse_args()
 

@@ -2,7 +2,7 @@
 
 [English](README.md) | [KR](README.ko.md)
 
-deepdetect is a privacy-first video anonymization web service. It detects faces and license plates with YOLO, then applies blur, reference-person preservation, or a character/emoji overlay depending on the selected mode.
+deepdetect is a privacy-first video anonymization web service. It detects faces and license plates with YOLO, then applies blur, reference-person preservation, or a privacy-mask overlay depending on the selected mode.
 
 The current build focuses on high-quality saved-video processing, with a browser-camera realtime preview for demonstrations.
 
@@ -16,8 +16,8 @@ The current build focuses on high-quality saved-video processing, with a browser
 - Detect faces and license plates using YOLO model wrappers.
 - Blur all detected privacy regions.
 - Preserve the reference person while blurring other faces.
-- Replace the reference person's face with a glossy emoji/character overlay.
-- Keep character overlays stable with IoU tracking and bounding-box smoothing.
+- Replace the reference person's face with a branded privacy mask.
+- Keep privacy mask overlays stable with IoU tracking and bounding-box smoothing.
 - Preview realtime processing from the browser camera.
 - Download the processed result video.
 - Switch the web UI between KR and ENG.
@@ -33,14 +33,14 @@ The sample QA run uses the public Xiph Derf `akiyo` test sequence.
 | Average face-region sharpness reduction after blur | 98.05% |
 | Minimum face-region sharpness reduction after blur | 95.35% |
 | Preserve-mode reference matches | 90 / 90 |
-| Character overlays | 90 / 90 |
+| Privacy mask overlays | 90 / 90 |
 
 Artifacts:
 
 - Blur result: [samples/outputs/akiyo_blur.mp4](samples/outputs/akiyo_blur.mp4)
 - Preserve result: [samples/outputs/akiyo_preserve.mp4](samples/outputs/akiyo_preserve.mp4)
-- Character result: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
-- Visual QA sheet: [samples/reports/akiyo_contact_sheet.jpg](samples/reports/akiyo_contact_sheet.jpg)
+- Privacy mask result: [samples/outputs/akiyo_character.mp4](samples/outputs/akiyo_character.mp4)
+- Frontend showcase sheet: [samples/reports/group_showcase_contact_sheet.jpg](samples/reports/group_showcase_contact_sheet.jpg)
 - Blur metrics: [samples/reports/akiyo_blur_quality.json](samples/reports/akiyo_blur_quality.json)
 
 ## Architecture
@@ -63,7 +63,7 @@ flowchart TD
     VisionCore --> Detector[YOLO Region Detector<br/>faces and plates]
     VisionCore --> Matcher[ArcFace Matcher<br/>reference identity]
     VisionCore --> Tracker[IoU Tracker<br/>smoothing and short miss retention]
-    VisionCore --> Renderer[Privacy Renderer<br/>blur and character overlay]
+    VisionCore --> Renderer[Privacy Renderer<br/>blur and privacy mask overlay]
 
     Renderer --> OutputVideo[Processed MP4]
     Renderer --> OutputFrame[Processed JPEG Frame]
@@ -81,7 +81,7 @@ flowchart TD
 |---|---|---|---|
 | `blur` | blurred | blurred | blurred |
 | `preserve` | kept original | blurred | blurred |
-| `character` | replaced with emoji/character | blurred | blurred |
+| `character` | replaced with privacy mask | blurred | blurred |
 
 The web UI exposes `preserve` and `character` for the main product flow. The `blur` mode is available in the sample tooling and pipeline for QA.
 
@@ -224,13 +224,13 @@ Current verification:
 - Small, far, heavily occluded, or partial faces may be missed.
 - License plate quality depends on the selected plate YOLO model and target region.
 - Reference-person matching is pragmatic, not a security-grade identity system.
-- Apple emoji assets are not bundled; the default emoji is a custom generated glossy asset.
+- Apple emoji assets are not bundled; the default overlay is a custom generated deepdetect privacy mask.
 
 ## Roadmap
 
 - Add a traffic sample with visible license plates for plate blur QA.
 - Add result preview playback in the web UI.
-- Add user-uploaded custom character assets.
+- Add user-uploaded custom mask assets.
 - Improve realtime throughput with frame skipping, batching, or ONNX/TensorRT/OpenVINO backends.
 - Add a deployment profile for the final embedded target.
 
