@@ -92,6 +92,21 @@ class JobService:
     def is_cancelled(self, job_id: str) -> bool:
         return self.get(job_id).status == JobStatus.CANCELLED
 
+    def recover_incomplete_jobs(self) -> list[JobRecord]:
+        with self._lock:
+            recoverable = [
+                record
+                for record in self._jobs.values()
+                if record.status in (JobStatus.QUEUED, JobStatus.PROCESSING)
+            ]
+            for record in recoverable:
+                record.status = JobStatus.QUEUED
+                record.message = "Recovered after service restart"
+                record.error = None
+                record.updated_at = time.time()
+                self._persist(record)
+            return list(recoverable)
+
     def update(self, job_id: str, **changes: object) -> JobRecord:
         with self._lock:
             record = self.get(job_id)
@@ -115,4 +130,3 @@ class JobService:
             except (OSError, json.JSONDecodeError, TypeError, ValueError):
                 continue
             self._jobs[record.job_id] = record
-

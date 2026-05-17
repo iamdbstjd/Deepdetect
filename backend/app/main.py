@@ -109,6 +109,8 @@ async def cleanup_loop() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     job_queue.start()
+    for record in job_service.recover_incomplete_jobs():
+        job_queue.submit(record.job_id)
     cleanup_task = asyncio.create_task(cleanup_loop())
     try:
         yield
