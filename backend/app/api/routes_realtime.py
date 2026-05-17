@@ -65,6 +65,9 @@ def build_realtime_router(
         await websocket.accept()
         while True:
             frame = await websocket.receive_bytes()
+            if len(frame) > settings.max_realtime_frame_bytes:
+                await websocket.close(code=1009)
+                return
             if not session.runtime:
                 await websocket.close(code=1011)
                 return
@@ -85,8 +88,7 @@ def build_realtime_router(
         session = realtime_service.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="session not found")
-        data = await frame.read()
-        await frame.close()
+        data = await _read_realtime_frame(frame, settings)
         if not session.runtime:
             raise HTTPException(status_code=409, detail="session is not ready")
         try:
@@ -96,3 +98,22 @@ def build_realtime_router(
         return Response(content=rendered, media_type="image/jpeg")
 
     return router
+
+
+async def _read_realtime_frame(upload: UploadFile, settings: Settings) -> bytes:
+    total = 0
+    chunks: list[bytes] = []
+    try:
+        while True:
+            chunk = await upload.read(1024 * 256)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > settings.max_realtime_frame_bytes:
+                raise HTTPException(status_code=413, detail="realtime frame is too large")
+            chunks.append(chunk)
+    finally:
+        await upload.close()
+    if total <= 0:
+        raise HTTPException(status_code=400, detail="realtime frame is empty")
+    return b"".join(chunks)

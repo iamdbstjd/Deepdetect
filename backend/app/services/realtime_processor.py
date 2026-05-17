@@ -36,6 +36,7 @@ class RealtimeFrameProcessor:
         character_store: CharacterAssetStore | None,
         tracker_factory: Callable[[], DetectionTracker | None],
         output_format: str = ".jpg",
+        max_pixels: int | None = None,
     ):
         self.detector = detector
         self.renderer = renderer
@@ -43,6 +44,7 @@ class RealtimeFrameProcessor:
         self.character_store = character_store
         self.tracker_factory = tracker_factory
         self.output_format = output_format
+        self.max_pixels = max_pixels
 
     def create_runtime(
         self,
@@ -93,12 +95,17 @@ class RealtimeFrameProcessor:
         rendered = self.renderer.render(frame, render_detections, overlays)
         return self._encode(rendered)
 
-    @staticmethod
-    def _decode(data: bytes) -> np.ndarray:
+    def _decode(self, data: bytes) -> np.ndarray:
         array = np.frombuffer(data, dtype=np.uint8)
         frame = cv2.imdecode(array, cv2.IMREAD_COLOR)
         if frame is None or frame.size == 0:
             raise RealtimeFrameError("cannot decode realtime frame")
+        if self.max_pixels is not None:
+            height, width = frame.shape[:2]
+            if height * width > self.max_pixels:
+                raise RealtimeFrameError(
+                    f"realtime frame is too large: {width}x{height} > {self.max_pixels} pixels"
+                )
         return frame
 
     def _encode(self, frame: np.ndarray) -> bytes:

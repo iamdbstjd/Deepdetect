@@ -64,6 +64,24 @@ class ApiRealtimeTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_rejects_oversized_frame_upload(self) -> None:
+        reference_bytes = self._image_bytes()
+        oversized = b"x" * (self.main.settings.max_realtime_frame_bytes + 1)
+        with TestClient(self.main.app) as client:
+            session_response = client.post(
+                "/api/realtime/sessions",
+                files={"reference_image": ("face.jpg", reference_bytes, "image/jpeg")},
+                data={"mode": "preserve"},
+            )
+            self.assertEqual(session_response.status_code, 200, session_response.text)
+            response = client.post(
+                "/api/realtime/frame",
+                files={"frame": ("frame.jpg", oversized, "image/jpeg")},
+                data={"session_id": session_response.json()["session_id"]},
+            )
+
+        self.assertEqual(response.status_code, 413)
+
     def _image_bytes(self) -> bytes:
         path = Path(self.tmp.name) / "image.jpg"
         image = np.zeros((64, 64, 3), dtype=np.uint8)

@@ -81,6 +81,7 @@ realtime_frame_processor = RealtimeFrameProcessor(
     face_matcher=face_matcher,
     character_store=character_store,
     tracker_factory=build_tracker,
+    max_pixels=settings.max_realtime_frame_pixels,
 )
 
 

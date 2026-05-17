@@ -39,6 +39,8 @@ class Settings:
     storage_root: Path
     max_video_bytes: int = 512 * 1024 * 1024
     max_image_bytes: int = 10 * 1024 * 1024
+    max_realtime_frame_bytes: int = 2 * 1024 * 1024
+    max_realtime_frame_pixels: int = 1280 * 720
     result_ttl_seconds: int = 24 * 60 * 60
     cleanup_interval_seconds: int = 60
     worker_poll_seconds: float = 0.2
@@ -81,6 +83,14 @@ def get_settings() -> Settings:
         storage_root=storage_root,
         max_video_bytes=_int_env("EMBED_MAX_VIDEO_BYTES", 512 * 1024 * 1024),
         max_image_bytes=_int_env("EMBED_MAX_IMAGE_BYTES", 10 * 1024 * 1024),
+        max_realtime_frame_bytes=_int_env(
+            "EMBED_MAX_REALTIME_FRAME_BYTES",
+            2 * 1024 * 1024,
+        ),
+        max_realtime_frame_pixels=_int_env(
+            "EMBED_MAX_REALTIME_FRAME_PIXELS",
+            1280 * 720,
+        ),
         result_ttl_seconds=_int_env("EMBED_RESULT_TTL_SECONDS", 24 * 60 * 60),
         cleanup_interval_seconds=_int_env("EMBED_CLEANUP_INTERVAL_SECONDS", 60),
         detector_mode=os.getenv("EMBED_DETECTOR_MODE", "auto"),
