@@ -40,6 +40,7 @@ class Settings:
     max_video_bytes: int = 512 * 1024 * 1024
     max_image_bytes: int = 10 * 1024 * 1024
     result_ttl_seconds: int = 24 * 60 * 60
+    cleanup_interval_seconds: int = 60
     worker_poll_seconds: float = 0.2
     detector_mode: str = "auto"
     yolo_face_model_path: Path | None = None
@@ -81,6 +82,7 @@ def get_settings() -> Settings:
         max_video_bytes=_int_env("EMBED_MAX_VIDEO_BYTES", 512 * 1024 * 1024),
         max_image_bytes=_int_env("EMBED_MAX_IMAGE_BYTES", 10 * 1024 * 1024),
         result_ttl_seconds=_int_env("EMBED_RESULT_TTL_SECONDS", 24 * 60 * 60),
+        cleanup_interval_seconds=_int_env("EMBED_CLEANUP_INTERVAL_SECONDS", 60),
         detector_mode=os.getenv("EMBED_DETECTOR_MODE", "auto"),
         yolo_face_model_path=face_model,
         yolo_plate_model_path=plate_model,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -10,7 +11,14 @@ from fastapi.staticfiles import StaticFiles
 from backend.app.api.routes_jobs import build_jobs_router
 from backend.app.api.routes_realtime import build_realtime_router
 from backend.app.core.config import get_settings
-from backend.app.core.paths import ensure_directories, jobs_dir, outputs_dir
+from backend.app.core.paths import (
+    ensure_directories,
+    jobs_dir,
+    outputs_dir,
+    temp_dir,
+    uploads_dir,
+)
+from backend.app.services.cleanup_service import CleanupService
 from backend.app.services.job_service import JobService
 from backend.app.services.queue_service import SimpleJobQueue
 from backend.app.services.realtime_processor import RealtimeFrameProcessor
@@ -66,6 +74,7 @@ pipeline = BlurVideoPipeline(
 processor = VideoJobProcessor(outputs_dir(settings), pipeline=pipeline)
 job_queue = SimpleJobQueue(job_service, processor)
 realtime_service = RealtimeSessionService()
+cleanup_service = CleanupService(settings.result_ttl_seconds)
 realtime_frame_processor = RealtimeFrameProcessor(
     detector=detector,
     renderer=renderer,
@@ -75,12 +84,37 @@ realtime_frame_processor = RealtimeFrameProcessor(
 )
 
 
+def cleanup_expired_storage(now: float | None = None) -> dict[str, list[str]]:
+    removed = {
+        "uploads": cleanup_service.cleanup_expired_children(uploads_dir(settings), now),
+        "outputs": cleanup_service.cleanup_expired_children(outputs_dir(settings), now),
+        "jobs": cleanup_service.cleanup_expired_children(jobs_dir(settings), now),
+        "temp": cleanup_service.cleanup_expired_children(temp_dir(settings), now),
+    }
+    realtime_sessions = realtime_service.cleanup_expired(now)
+    return {
+        key: [str(path) for path in paths]
+        for key, paths in removed.items()
+    } | {"realtime_sessions": realtime_sessions}
+
+
+async def cleanup_loop() -> None:
+    interval = max(1, settings.cleanup_interval_seconds)
+    while True:
+        cleanup_expired_storage()
+        await asyncio.sleep(interval)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     job_queue.start()
+    cleanup_task = asyncio.create_task(cleanup_loop())
     try:
         yield
     finally:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
         job_queue.stop()
 
 
