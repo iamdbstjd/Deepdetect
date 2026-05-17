@@ -11,14 +11,13 @@ models/
   plate/
     license_plate_detector.pt
   face/
-    face_embedding.onnx
+    w600k_r50.onnx
 ```
 
-Phase 2:
-- YOLO 얼굴 감지 모델 연결
-- YOLO 번호판 감지 모델 연결
+기본 실행은 위 파일명을 찾는다. 다른 파일명을 사용할 경우 환경변수로 경로를 지정한다.
 
-Phase 3:
-- 얼굴 임베딩 모델 연결
-- 참조 인물 similarity threshold 튜닝
-
+```bash
+EMBED_YOLO_FACE_MODEL=models/yolo/face_detector.pt
+EMBED_YOLO_PLATE_MODEL=models/plate/license_plate_detector.pt
+EMBED_FACE_MATCH_MODEL=models/face/w600k_r50.onnx
+```

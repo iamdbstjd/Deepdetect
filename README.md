@@ -122,7 +122,7 @@ tools/
 - OpenCV
 - FastAPI
 - Ultralytics YOLO
-- Existing model files under `models/`
+- Model files placed locally under `models/`
 
 Install dependencies:
 
@@ -152,7 +152,7 @@ models/plate/license_plate_detector.pt
 models/face/w600k_r50.onnx
 ```
 
-The downloaded model inventory and hashes are documented in [docs/model-inventory.md](docs/model-inventory.md).
+Model weights are intentionally ignored by Git because of size and license constraints. Place compatible weights at the default paths above, or override the paths with environment variables.
 
 Useful environment variables:
 
@@ -169,6 +169,11 @@ EMBED_TRACKER_ENABLED=true
 EMBED_TRACKER_IOU_THRESHOLD=0.3
 EMBED_TRACKER_SMOOTHING_ALPHA=0.55
 EMBED_TRACKER_MAX_MISSING=2
+
+EMBED_MAX_REALTIME_FRAME_BYTES=2097152
+EMBED_MAX_REALTIME_FRAME_PIXELS=921600
+EMBED_RESULT_TTL_SECONDS=86400
+EMBED_CLEANUP_INTERVAL_SECONDS=60
 ```
 
 ## Sample QA Workflow
@@ -216,7 +221,7 @@ node --check frontend/src/app.js
 
 Current verification:
 
-- Backend tests: 26 passing.
+- Backend tests: 31 passing.
 - Frontend syntax check: passing.
 - Browser rendering checked with Playwright for desktop and mobile.
 - Blur sample QA checked visually and with sharpness metrics.
@@ -231,7 +236,6 @@ Current verification:
 ## Roadmap
 
 - Add a traffic sample with visible license plates for plate blur QA.
-- Add result preview playback in the web UI.
 - Add user-uploaded custom character assets.
 - Improve realtime throughput with frame skipping, batching, or ONNX/TensorRT/OpenVINO backends.
 - Add a deployment profile for the final embedded target.

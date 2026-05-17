@@ -122,7 +122,7 @@ tools/
 - OpenCV
 - FastAPI
 - Ultralytics YOLO
-- `models/` 아래 모델 파일
+- `models/` 아래에 로컬로 배치한 모델 파일
 
 의존성 설치:
 
@@ -152,7 +152,7 @@ models/plate/license_plate_detector.pt
 models/face/w600k_r50.onnx
 ```
 
-다운로드된 모델 목록과 SHA256은 [docs/model-inventory.md](docs/model-inventory.md)에 정리되어 있습니다.
+모델 파일은 용량과 라이선스 제약 때문에 Git에는 포함하지 않습니다. 위 기본 경로에 호환되는 weight를 배치하거나 환경변수로 경로를 바꿔 실행합니다.
 
 주요 환경변수:
 
@@ -169,6 +169,11 @@ EMBED_TRACKER_ENABLED=true
 EMBED_TRACKER_IOU_THRESHOLD=0.3
 EMBED_TRACKER_SMOOTHING_ALPHA=0.55
 EMBED_TRACKER_MAX_MISSING=2
+
+EMBED_MAX_REALTIME_FRAME_BYTES=2097152
+EMBED_MAX_REALTIME_FRAME_PIXELS=921600
+EMBED_RESULT_TTL_SECONDS=86400
+EMBED_CLEANUP_INTERVAL_SECONDS=60
 ```
 
 ## 샘플 QA 실행
@@ -216,7 +221,7 @@ node --check frontend/src/app.js
 
 현재 검증 상태:
 
-- 백엔드 테스트 26개 통과
+- 백엔드 테스트 31개 통과
 - 프론트엔드 문법 검사 통과
 - Playwright로 데스크톱/모바일 UI 렌더링 확인
 - 샘플 영상 기준 blur 결과를 시각 자료와 선명도 감소율로 확인
@@ -231,7 +236,6 @@ node --check frontend/src/app.js
 ## Roadmap
 
 - 번호판이 잘 보이는 차량 샘플을 추가해 plate blur QA 수행
-- 웹 UI에 결과 영상 미리보기 추가
 - 사용자 업로드 캐릭터 asset 지원
 - frame skipping, batching, ONNX/TensorRT/OpenVINO로 실시간 처리량 개선
 - 최종 임베디드 보드용 실행 프로파일 추가
