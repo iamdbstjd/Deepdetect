@@ -105,12 +105,14 @@ models/
   face/           ArcFace ONNX model
 samples/
   videos/         sample source and short clips
+  references/     reference faces and UI showcase source image
   outputs/        processed demo videos
   reports/        QA reports and screenshots
 tools/
   prepare_sample.py
   run_sample_pipeline.py
   export_sample_contact_sheet.py
+  export_frontend_assets.py
   measure_blur_quality.py
 ```
 

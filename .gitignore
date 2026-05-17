@@ -8,6 +8,12 @@ dist/
 build/
 .omx/
 
+# Local planning and work notes
+plan.md
+docs/phase*.md
+docs/model-inventory.md
+docs/face-embedding.md
+
 storage/uploads/*
 !storage/uploads/.gitkeep
 storage/outputs/*

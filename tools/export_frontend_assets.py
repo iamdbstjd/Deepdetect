@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 import cv2
@@ -8,7 +9,8 @@ import numpy as np
 
 
 TARGET_SIZE = (1600, 900)
-SOURCE_IMAGE = Path("samples/references/group_sample.jpg")
+SOURCE_IMAGE = Path("samples/references/face_detected.png")
+BOX_FILE = Path("samples/references/face_detected_boxes.json")
 ASSET_DIR = Path("frontend/assets")
 REPORT_DIR = Path("samples/reports")
 
@@ -16,17 +18,53 @@ REPORT_DIR = Path("samples/reports")
 @dataclass(frozen=True)
 class FaceRegion:
     box: tuple[int, int, int, int]
+    privacy_box: tuple[int, int, int, int]
     confidence: float
     is_reference: bool = False
 
 
 FACE_REGIONS = [
-    FaceRegion((176, 352, 430, 556), 0.91),
-    FaceRegion((272, 76, 426, 254), 0.88),
-    FaceRegion((512, 366, 692, 542), 0.90),
-    FaceRegion((756, 326, 940, 504), 0.89),
-    FaceRegion((852, 44, 1070, 276), 0.94, is_reference=True),
+    FaceRegion((503, 121, 798, 452), (508, 160, 793, 447), 0.91),
+    FaceRegion((1597, 70, 1874, 388), (1602, 109, 1869, 383), 0.94, is_reference=True),
+    FaceRegion((441, 690, 755, 1054), (446, 729, 750, 1049), 0.91),
+    FaceRegion((985, 682, 1240, 985), (990, 721, 1235, 980), 0.90),
+    FaceRegion((1435, 664, 1705, 966), (1440, 703, 1700, 961), 0.89),
 ]
+
+
+def load_face_regions() -> list[FaceRegion]:
+    if not BOX_FILE.exists():
+        return FACE_REGIONS
+    payload = json.loads(BOX_FILE.read_text(encoding="utf-8"))
+    regions = []
+    for index, item in enumerate(payload.get("regions", []), start=1):
+        raw_box = item.get("box")
+        if not isinstance(raw_box, list) or len(raw_box) != 4:
+            raise ValueError(f"invalid box at region {index}: {raw_box!r}")
+        box = parse_box(raw_box, f"region {index} box")
+        privacy_box = parse_box(item.get("privacy_box", raw_box), f"region {index} privacy_box")
+        if box[2] <= box[0] or box[3] <= box[1]:
+            raise ValueError(f"invalid box dimensions at region {index}: {raw_box!r}")
+        if privacy_box[2] <= privacy_box[0] or privacy_box[3] <= privacy_box[1]:
+            raise ValueError(f"invalid privacy box dimensions at region {index}: {raw_box!r}")
+        regions.append(
+            FaceRegion(
+                box=box,
+                privacy_box=privacy_box,
+                confidence=float(item.get("confidence", 0.9)),
+                is_reference=bool(item.get("is_reference", False)),
+            )
+        )
+    if not regions:
+        raise ValueError(f"no regions found in {BOX_FILE}")
+    return regions
+
+
+def parse_box(raw_box, name: str) -> tuple[int, int, int, int]:
+    if not isinstance(raw_box, list) or len(raw_box) != 4:
+        raise ValueError(f"invalid {name}: {raw_box!r}")
+    x1, y1, x2, y2 = [int(round(float(value))) for value in raw_box]
+    return x1, y1, x2, y2
 
 
 def read_source() -> np.ndarray:
@@ -65,8 +103,8 @@ def fit_to_canvas(source: np.ndarray) -> tuple[np.ndarray, float, int, int]:
     return output, foreground_scale, offset_x, offset_y
 
 
-def scaled_box(region: FaceRegion, scale: float, offset_x: int, offset_y: int) -> tuple[int, int, int, int]:
-    x1, y1, x2, y2 = region.box
+def scaled_box(box: tuple[int, int, int, int], scale: float, offset_x: int, offset_y: int) -> tuple[int, int, int, int]:
+    x1, y1, x2, y2 = box
     return (
         int(round(x1 * scale + offset_x)),
         int(round(y1 * scale + offset_y)),
@@ -136,35 +174,6 @@ def draw_smile_emoji(image: np.ndarray, box: tuple[int, int, int, int]) -> None:
     )
 
 
-def draw_detection_box(
-    image: np.ndarray,
-    box: tuple[int, int, int, int],
-    label: str,
-    color: tuple[int, int, int],
-) -> None:
-    x1, y1, x2, y2 = clip_box(box, image.shape[1], image.shape[0])
-    thickness = 4
-    cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness)
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.62
-    text_thickness = 2
-    (text_width, text_height), baseline = cv2.getTextSize(label, font, font_scale, text_thickness)
-    label_y1 = max(0, y1 - text_height - baseline - 12)
-    label_y2 = label_y1 + text_height + baseline + 12
-    label_x2 = min(image.shape[1], x1 + text_width + 18)
-    cv2.rectangle(image, (x1, label_y1), (label_x2, label_y2), color, -1)
-    cv2.putText(
-        image,
-        label,
-        (x1 + 9, label_y2 - baseline - 6),
-        font,
-        font_scale,
-        (255, 255, 255),
-        text_thickness,
-        cv2.LINE_AA,
-    )
-
-
 def clip_box(box: tuple[int, int, int, int], width: int, height: int) -> tuple[int, int, int, int]:
     x1, y1, x2, y2 = box
     return max(0, x1), max(0, y1), min(width, x2), min(height, y2)
@@ -172,28 +181,19 @@ def clip_box(box: tuple[int, int, int, int], width: int, height: int) -> tuple[i
 
 def make_showcase(mode: str) -> np.ndarray:
     canvas, scale, offset_x, offset_y = fit_to_canvas(read_source())
-    green = (114, 124, 12)
-    blue = (235, 117, 37)
-    orange = (0, 119, 217)
-
-    for region in FACE_REGIONS:
-        box = scaled_box(region, scale, offset_x, offset_y)
+    for region in load_face_regions():
+        privacy_box = scaled_box(region.privacy_box, scale, offset_x, offset_y)
         if mode == "original":
-            draw_detection_box(canvas, box, f"FACE {region.confidence:.2f}", blue)
             continue
         if mode == "blur":
-            blur_box(canvas, box)
-            draw_detection_box(canvas, box, "BLUR FACE", orange)
+            blur_box(canvas, privacy_box)
             continue
         if mode == "preserve" and region.is_reference:
-            draw_detection_box(canvas, box, "REFERENCE KEEP", green)
             continue
         if mode == "character" and region.is_reference:
-            draw_smile_emoji(canvas, box)
-            draw_detection_box(canvas, box, "SMILE EMOJI", green)
+            draw_smile_emoji(canvas, privacy_box)
             continue
-        blur_box(canvas, box)
-        draw_detection_box(canvas, box, "ANONYMIZED", orange)
+        blur_box(canvas, privacy_box)
     return canvas
 
 

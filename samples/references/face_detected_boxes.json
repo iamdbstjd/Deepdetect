@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "image": "samples/references/face_detected.png",
+  "regions": [
+    {
+      "id": "face_1",
+      "box": [503, 121, 798, 452],
+      "privacy_box": [508, 160, 793, 447],
+      "confidence": 0.91,
+      "is_reference": false
+    },
+    {
+      "id": "face_2",
+      "box": [1597, 70, 1874, 388],
+      "privacy_box": [1602, 109, 1869, 383],
+      "confidence": 0.94,
+      "is_reference": true
+    },
+    {
+      "id": "face_3",
+      "box": [441, 690, 755, 1054],
+      "privacy_box": [446, 729, 750, 1049],
+      "confidence": 0.91,
+      "is_reference": false
+    },
+    {
+      "id": "face_4",
+      "box": [985, 682, 1240, 985],
+      "privacy_box": [990, 721, 1235, 980],
+      "confidence": 0.9,
+      "is_reference": false
+    },
+    {
+      "id": "face_5",
+      "box": [1435, 664, 1705, 966],
+      "privacy_box": [1440, 703, 1700, 961],
+      "confidence": 0.89,
+      "is_reference": false
+    }
+  ]
+}
