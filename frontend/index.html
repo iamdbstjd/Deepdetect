@@ -28,8 +28,75 @@
         </div>
       </header>
 
-      <main class="workspace">
-        <section class="work-panel work-panel-primary" aria-labelledby="upload-title">
+      <main>
+        <section class="hero-section" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <p class="eyebrow" data-i18n="heroEyebrow">영상 개인정보 보호</p>
+            <h1 id="hero-title" data-i18n="heroTitle">공유 가능한 영상으로 안전하게 변환하세요</h1>
+            <p class="hero-lede" data-i18n="heroLede">
+              얼굴과 번호판을 감지하고, 참조 인물은 유지하거나 이모지로 대체합니다.
+            </p>
+            <div class="hero-metrics" aria-label="sample quality metrics">
+              <div>
+                <strong>90/90</strong>
+                <span data-i18n="metricDetection">샘플 얼굴 감지</span>
+              </div>
+              <div>
+                <strong>98.05%</strong>
+                <span data-i18n="metricBlur">평균 선명도 감소</span>
+              </div>
+              <div>
+                <strong>KR/ENG</strong>
+                <span data-i18n="metricLanguage">언어 전환</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="showcase-panel" aria-label="처리 예시">
+            <div class="showcase-main">
+              <img id="showcase-image" src="/assets/showcase_blur.jpg" alt="deepdetect blur sample" />
+              <div class="showcase-overlay">
+                <span data-i18n="showcaseBadge">실제 샘플 결과</span>
+                <strong id="showcase-title" data-i18n="showcaseBlurTitle">얼굴 블러 처리</strong>
+              </div>
+            </div>
+            <div class="showcase-strip">
+              <button
+                class="showcase-card is-active"
+                type="button"
+                data-showcase="/assets/showcase_blur.jpg"
+                data-showcase-title-key="showcaseBlurTitle"
+                aria-pressed="true"
+              >
+                <img src="/assets/showcase_blur.jpg" alt="" />
+                <span data-i18n="showcaseBlur">Blur</span>
+              </button>
+              <button
+                class="showcase-card"
+                type="button"
+                data-showcase="/assets/showcase_preserve.jpg"
+                data-showcase-title-key="showcasePreserveTitle"
+                aria-pressed="false"
+              >
+                <img src="/assets/showcase_preserve.jpg" alt="" />
+                <span data-i18n="showcasePreserve">Preserve</span>
+              </button>
+              <button
+                class="showcase-card"
+                type="button"
+                data-showcase="/assets/showcase_character.jpg"
+                data-showcase-title-key="showcaseEmojiTitle"
+                aria-pressed="false"
+              >
+                <img src="/assets/showcase_character.jpg" alt="" />
+                <span data-i18n="showcaseEmoji">Emoji</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <section class="work-panel work-panel-primary" aria-labelledby="upload-title">
           <div class="section-header">
             <div>
               <p class="eyebrow" data-i18n="savedVideo">저장 영상</p>
@@ -94,10 +161,39 @@
               </select>
             </label>
 
+            <div class="mode-preview" aria-live="polite">
+              <span class="mode-preview-icon" aria-hidden="true"></span>
+              <div>
+                <strong id="selected-mode-title" data-i18n="selectedPreserveTitle">참조 인물 원본 유지</strong>
+                <p id="selected-mode-copy" data-i18n="selectedPreserveCopy">
+                  참조 사진과 일치한 인물만 원본으로 유지하고 나머지는 블러 처리합니다.
+                </p>
+              </div>
+            </div>
+
             <button id="submit-button" class="primary-button" type="submit" data-i18n="startProcess">
               처리 시작
             </button>
           </form>
+
+          <div class="workflow-steps" aria-label="processing steps">
+            <div class="workflow-step is-active" data-step="upload">
+              <span>1</span>
+              <strong data-i18n="stepUpload">업로드</strong>
+            </div>
+            <div class="workflow-step" data-step="detect">
+              <span>2</span>
+              <strong data-i18n="stepDetect">감지</strong>
+            </div>
+            <div class="workflow-step" data-step="render">
+              <span>3</span>
+              <strong data-i18n="stepRender">렌더링</strong>
+            </div>
+            <div class="workflow-step" data-step="export">
+              <span>4</span>
+              <strong data-i18n="stepExport">완료</strong>
+            </div>
+          </div>
 
           <div class="job-summary" aria-live="polite">
             <div class="summary-grid">
@@ -126,38 +222,69 @@
           </div>
         </section>
 
-        <section class="work-panel realtime-panel" aria-labelledby="realtime-title">
-          <div class="section-header compact">
-            <div>
-              <p class="eyebrow" data-i18n="realtime">실시간</p>
-              <h2 id="realtime-title" data-i18n="realtimeTitle">실시간 미리보기</h2>
-            </div>
-            <span class="surface-badge" data-i18n="browserCamera">브라우저 카메라</span>
-          </div>
+          <aside class="side-stack">
+            <section class="work-panel result-panel" aria-labelledby="result-title">
+              <div class="section-header compact">
+                <div>
+                  <p class="eyebrow" data-i18n="resultEyebrow">결과</p>
+                  <h2 id="result-title" data-i18n="resultTitle">처리 영상 미리보기</h2>
+                </div>
+                <span class="surface-badge" data-i18n="resultBadge">MP4</span>
+              </div>
+              <div id="result-preview" class="result-preview">
+                <video id="result-video" controls playsinline></video>
+                <div id="result-empty" class="result-empty">
+                  <strong data-i18n="resultEmptyTitle">결과가 여기에 표시됩니다</strong>
+                  <span data-i18n="resultEmptyCopy">처리가 완료되면 다운로드와 미리보기가 활성화됩니다.</span>
+                </div>
+              </div>
+              <a id="result-open-link" class="secondary-link hidden" href="#" target="_blank" rel="noreferrer" data-i18n="openResult">
+                새 탭에서 열기
+              </a>
+            </section>
 
-          <div class="preview-grid">
-            <figure class="media-frame">
-              <video id="camera-video" autoplay muted playsinline></video>
-              <figcaption data-i18n="camera">카메라</figcaption>
-            </figure>
-            <figure class="media-frame">
-              <canvas id="camera-canvas"></canvas>
-              <figcaption data-i18n="processedPreview">처리 결과</figcaption>
-            </figure>
-          </div>
+            <section class="work-panel realtime-panel" aria-labelledby="realtime-title">
+              <div class="section-header compact">
+                <div>
+                  <p class="eyebrow" data-i18n="realtime">실시간</p>
+                  <h2 id="realtime-title" data-i18n="realtimeTitle">실시간 미리보기</h2>
+                </div>
+                <span class="surface-badge" data-i18n="browserCamera">브라우저 카메라</span>
+              </div>
 
-          <div class="action-row">
-            <button id="session-button" class="secondary-button" type="button" data-i18n="createSession">
-              세션 생성
-            </button>
-            <button id="camera-button" class="primary-button" type="button" data-i18n="startCamera">
-              카메라 시작
-            </button>
-          </div>
+              <div class="preview-grid">
+                <figure class="media-frame">
+                  <video id="camera-video" autoplay muted playsinline></video>
+                  <div class="media-placeholder">
+                    <strong data-i18n="cameraPlaceholderTitle">카메라 대기 중</strong>
+                    <span data-i18n="cameraPlaceholderCopy">권한을 허용하면 원본 화면이 표시됩니다.</span>
+                  </div>
+                  <figcaption data-i18n="camera">카메라</figcaption>
+                </figure>
+                <figure class="media-frame">
+                  <canvas id="camera-canvas"></canvas>
+                  <div class="media-placeholder">
+                    <strong data-i18n="processedPlaceholderTitle">처리 결과 대기 중</strong>
+                    <span data-i18n="processedPlaceholderCopy">세션 생성 후 블러/캐릭터 결과가 표시됩니다.</span>
+                  </div>
+                  <figcaption data-i18n="processedPreview">처리 결과</figcaption>
+                </figure>
+              </div>
 
-          <p id="realtime-message" class="notice-line" data-i18n="initialRealtimeMessage">
-            참조 얼굴을 선택한 뒤 세션을 만들면 실시간 처리를 볼 수 있습니다.
-          </p>
+              <div class="action-row">
+                <button id="session-button" class="secondary-button" type="button" data-i18n="createSession">
+                  세션 생성
+                </button>
+                <button id="camera-button" class="primary-button" type="button" data-i18n="startCamera">
+                  카메라 시작
+                </button>
+              </div>
+
+              <p id="realtime-message" class="notice-line" data-i18n="initialRealtimeMessage">
+                참조 얼굴을 선택한 뒤 세션을 만들면 실시간 처리를 볼 수 있습니다.
+              </p>
+            </section>
+          </aside>
         </section>
       </main>
     </div>
