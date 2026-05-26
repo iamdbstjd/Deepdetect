@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,7 +13,7 @@
           <span class="brand-mark" aria-hidden="true"></span>
           <span>
             <strong>deepdetect</strong>
-            <small data-i18n="brandSubtitle">영상 익명화</small>
+            <small data-i18n="brandSubtitle">영상 프라이버시 데스크</small>
           </span>
         </a>
         <div class="topbar-actions">
@@ -21,9 +21,17 @@
             <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
             <button class="lang-button" type="button" data-lang="en">ENG</button>
           </div>
+          <div class="theme-toggle" role="group" aria-label="Theme">
+            <button class="theme-button is-active" type="button" data-theme-option="light" aria-label="Light theme">
+              <span aria-hidden="true">☀</span>
+            </button>
+            <button class="theme-button" type="button" data-theme-option="dark" aria-label="Dark theme">
+              <span aria-hidden="true">☾</span>
+            </button>
+          </div>
           <div class="service-status">
             <span class="status-dot" aria-hidden="true"></span>
-            <span data-i18n="serviceReady">AI 처리 준비됨</span>
+            <span data-i18n="serviceReady">처리 파이프라인 준비</span>
           </div>
         </div>
       </header>
@@ -41,15 +49,15 @@
         <section id="video-page" class="page-view is-active">
           <section class="hero-section" aria-labelledby="hero-title">
             <div class="hero-copy">
-              <p class="eyebrow" data-i18n="heroEyebrow">영상 개인정보 보호</p>
-              <h1 id="hero-title" data-i18n="heroTitle">공유 가능한 영상으로 안전하게 변환하세요</h1>
+              <p class="eyebrow" data-i18n="heroEyebrow">공개 전 검토</p>
+              <h1 id="hero-title" data-i18n="heroTitle">영상 속 얼굴과 번호판을 정리하세요</h1>
               <p class="hero-lede" data-i18n="heroLede">
-                얼굴과 번호판을 감지하고, 허용한 인물만 원본 유지하거나 스마일 이모지로 대체합니다.
+                업로드한 영상에서 인물 후보를 확인하고, 허용한 얼굴만 원본 유지하거나 스마일 이모지로 대체합니다.
               </p>
               <div class="hero-metrics" aria-label="sample quality metrics">
                 <div>
                   <strong>5</strong>
-                  <span data-i18n="metricDetection">샘플 얼굴 감지</span>
+                  <span data-i18n="metricDetection">후보 검토</span>
                 </div>
                 <div>
                   <strong>4</strong>
@@ -57,7 +65,7 @@
                 </div>
                 <div>
                   <strong>multi</strong>
-                  <span data-i18n="metricLanguage">여러 허용 얼굴</span>
+                  <span data-i18n="metricLanguage">허용 목록</span>
                 </div>
               </div>
             </div>
@@ -66,7 +74,7 @@
               <div class="showcase-main">
                 <img id="showcase-image" src="/assets/showcase_blur.jpg" alt="deepdetect YOLO-style blur sample" />
                 <div class="showcase-overlay">
-                  <span data-i18n="showcaseBadge">실제 샘플 결과</span>
+                  <span data-i18n="showcaseBadge">처리 예시</span>
                   <strong id="showcase-title" data-i18n="showcaseBlurTitle">얼굴 블러 처리</strong>
                 </div>
               </div>
@@ -109,10 +117,10 @@
             <section class="work-panel work-panel-primary" aria-labelledby="upload-title">
               <div class="section-header">
                 <div>
-                  <p class="eyebrow" data-i18n="savedVideo">저장 영상</p>
+                  <p class="eyebrow" data-i18n="savedVideo">비디오 작업</p>
                   <h1 id="upload-title" data-i18n="uploadTitle">허용 인물 선택 후 익명화</h1>
                 </div>
-                <span class="surface-badge" data-i18n="highQuality">고품질 처리</span>
+                <span class="surface-badge" data-i18n="highQuality">렌더링 작업</span>
               </div>
 
               <form id="upload-form" class="job-form">
@@ -263,7 +271,7 @@
           <section class="work-panel realtime-panel realtime-page-panel" aria-labelledby="realtime-title">
             <div class="section-header">
               <div>
-                <p class="eyebrow" data-i18n="realtime">실시간</p>
+                <p class="eyebrow" data-i18n="realtime">라이브 미리보기</p>
                 <h1 id="realtime-title" data-i18n="realtimeTitle">실시간 허용 인물 관리</h1>
               </div>
               <span class="surface-badge" data-i18n="browserCamera">브라우저 카메라</span>

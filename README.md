@@ -2,25 +2,33 @@
 
 [English](README.md) | [KR](README.ko.md)
 
-deepdetect is a privacy-first video anonymization web service. It detects faces and license plates with YOLO, then applies blur, reference-person preservation, or a smile emoji overlay depending on the selected mode.
+deepdetect is a privacy video review workspace. It detects faces and license plates with YOLO, lets the operator choose which people are allowed to remain visible, then renders a clean video export.
 
-The current build focuses on high-quality saved-video processing, with a browser-camera realtime preview for demonstrations.
+The current build prioritizes saved-video quality and includes a browser-camera realtime preview with an allow-person prompt for long-running blurred faces.
 
 ## UI Preview
 
-![deepdetect English UI](samples/reports/ui_en.png)
+English dark workspace:
+
+![deepdetect dark UI](samples/reports/ui_en.png)
+
+Korean light workspace:
+
+![deepdetect light UI](samples/reports/ui_ko.png)
 
 ## Features
 
-- Upload a video and a reference face image.
+- Upload a video and detect face candidates before rendering.
+- Select one or more people to allow; everyone else stays blurred.
+- Upload multiple manual allow-list face images when candidate detection is not enough.
 - Detect faces and license plates using YOLO model wrappers.
-- Blur all detected privacy regions.
-- Preserve the reference person while blurring other faces.
-- Replace the reference person's face with a smile emoji overlay.
+- Preserve allowed people or replace allowed faces with a smile emoji overlay.
 - Keep emoji overlays stable with IoU tracking and bounding-box smoothing.
 - Preview realtime processing from the browser camera.
+- Ask whether to allow a blurred realtime face after it remains visible for 10 seconds.
 - Download the processed result video.
 - Switch the web UI between KR and ENG.
+- Toggle the product UI between light and dark themes.
 
 ## Demo Evidence
 
@@ -47,21 +55,25 @@ Artifacts:
 
 ```mermaid
 flowchart TD
-    User[User] --> WebUI[Static Web UI<br/>Video upload, reference upload, mode selection]
+    User[Operator] --> WebUI[Static Web UI<br/>Video workspace, realtime workspace, theme/language controls]
+    WebUI --> CandidateAPI[Candidate Analysis API]
     WebUI --> JobsAPI[FastAPI Jobs API]
     WebUI --> RealtimeAPI[FastAPI Realtime API]
 
+    CandidateAPI --> CandidateService[Candidate Service<br/>sample frames, crop face candidates]
+    CandidateService --> TempStorage[(Temp Candidate Storage)]
+    TempStorage --> WebUI
     JobsAPI --> JobService[Job Service<br/>metadata, status, cancellation]
     JobService --> Queue[Background Job Queue]
     Queue --> Pipeline[BlurVideoPipeline]
 
-    RealtimeAPI --> RealtimeSession[Realtime Session Service]
+    RealtimeAPI --> RealtimeSession[Realtime Session Service<br/>allow list and pending prompts]
     RealtimeSession --> FrameProcessor[Realtime Frame Processor]
     FrameProcessor --> VisionCore[Shared Vision Core]
     Pipeline --> VisionCore
 
     VisionCore --> Detector[YOLO Region Detector<br/>faces and plates]
-    VisionCore --> Matcher[ArcFace Matcher<br/>reference identity]
+    VisionCore --> Matcher[ArcFace Matcher<br/>allowed-face identity]
     VisionCore --> Tracker[IoU Tracker<br/>smoothing and short miss retention]
     VisionCore --> Renderer[Privacy Renderer<br/>blur and emoji overlay]
 
@@ -83,7 +95,7 @@ flowchart TD
 | `preserve` | kept original | blurred | blurred |
 | `character` | replaced with emoji | blurred | blurred |
 
-The web UI exposes `preserve` and `character` for the main product flow. The `blur` mode is available in the sample tooling and pipeline for QA.
+The web UI exposes `preserve` and `character` for the main product flow. With no allowed faces selected, the render behaves as a blur-all privacy pass.
 
 ## Project Layout
 
@@ -97,8 +109,8 @@ backend/
   tests/          unittest test suite
 frontend/
   index.html      deepdetect UI
-  src/app.js      upload, realtime, KR/ENG language toggle
-  styles/app.css  responsive product styling
+  src/app.js      video/realtime workflows, theme and language controls
+  styles/app.css  responsive light/dark product styling
 models/
   yolo/           face detector weights
   plate/          license plate detector weights
@@ -204,12 +216,17 @@ python tools/measure_blur_quality.py
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/jobs/video` | Upload video/reference and create a processing job |
+| `POST` | `/api/jobs/video/candidates` | Upload video and extract face candidates |
+| `GET` | `/api/jobs/video/candidates/{analysis_id}/{candidate_id}` | Read a candidate face crop |
+| `POST` | `/api/jobs/video/from-candidates` | Create a render job from selected candidates |
+| `POST` | `/api/jobs/video` | Upload video and optional manual allow-list references |
 | `GET` | `/api/jobs/{job_id}` | Read job status |
 | `POST` | `/api/jobs/{job_id}/cancel` | Cancel a job |
 | `GET` | `/api/jobs/{job_id}/result` | Download processed video |
-| `POST` | `/api/realtime/sessions` | Create realtime processing session |
+| `POST` | `/api/realtime/sessions` | Create realtime processing session with optional allow-list references |
+| `POST` | `/api/realtime/frame-meta` | Process one camera frame and return prompt candidates |
 | `POST` | `/api/realtime/frame` | Process one camera frame |
+| `POST` | `/api/realtime/sessions/{session_id}/allow-face` | Add a prompted realtime face to the allow list |
 | `WS` | `/api/realtime/sessions/{session_id}/ws` | Realtime websocket frame endpoint |
 
 ## Tests
@@ -221,7 +238,7 @@ node --check frontend/src/app.js
 
 Current verification:
 
-- Backend tests: 31 passing.
+- Backend tests: 38 passing.
 - Frontend syntax check: passing.
 - Browser rendering checked with Playwright for desktop and mobile.
 - Blur sample QA checked visually and with sharpness metrics.
@@ -229,6 +246,8 @@ Current verification:
 ## Limitations
 
 - Small, far, heavily occluded, or partial faces may be missed.
+- Saved-video candidate analysis currently runs during the request and should be moved to a background analysis job for larger uploads.
+- Realtime allow prompts depend on tracking; keep the tracker enabled for the intended prompt behavior.
 - License plate quality depends on the selected plate YOLO model and target region.
 - Reference-person matching is pragmatic, not a security-grade identity system.
 - Apple emoji assets are not bundled; the default emoji is a custom generated smile asset.

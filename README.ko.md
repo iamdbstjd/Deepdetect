@@ -2,25 +2,33 @@
 
 [English](README.md) | [KR](README.ko.md)
 
-deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고 익명화하는 웹 서비스입니다. YOLO로 얼굴/번호판 위치를 찾고, 선택한 모드에 따라 블러 처리, 참조 인물 원본 유지, 스마일 이모지 오버레이를 적용합니다.
+deepdetect는 공개 전 영상을 검토하고 익명화하는 웹 작업 공간입니다. YOLO로 얼굴/번호판 위치를 찾고, 운영자가 허용할 인물을 선택한 뒤 나머지 개인정보 영역을 블러 처리한 결과 영상을 렌더링합니다.
 
-현재 구현은 저장 영상 처리 품질을 우선하며, 브라우저 카메라 기반 실시간 미리보기 기능도 제공합니다.
+현재 구현은 저장 영상 처리 품질을 우선하며, 브라우저 카메라 실시간 미리보기와 10초 이상 유지되는 블러 얼굴 허용 팝업도 제공합니다.
 
 ## UI 미리보기
 
-![deepdetect 한국어 UI](samples/reports/ui_ko.png)
+한국어 라이트 화면:
+
+![deepdetect 라이트 UI](samples/reports/ui_ko.png)
+
+영어 다크 화면:
+
+![deepdetect 다크 UI](samples/reports/ui_en.png)
 
 ## 주요 기능
 
-- 영상 파일과 참조 얼굴 이미지 업로드
+- 영상 파일 업로드 후 얼굴 후보를 먼저 추출
+- 허용할 인물을 여러 명 선택하고 나머지 얼굴은 블러 처리
+- 후보 감지가 부족할 때 수동 허용 얼굴 이미지 여러 장 업로드
 - YOLO 기반 얼굴/번호판 감지
-- 감지된 개인정보 영역 전체 블러 처리
-- 참조 인물은 원본 유지하고 다른 얼굴은 블러 처리
-- 참조 인물 얼굴을 스마일 이모지로 대체
+- 허용 인물 원본 유지 또는 스마일 이모지 대체
 - IoU tracker와 box smoothing으로 이모지 흔들림 완화
 - 브라우저 카메라 실시간 미리보기
+- 실시간에서 블러 얼굴이 10초 이상 유지되면 추가 허용 여부 확인
 - 결과 영상 다운로드
 - 웹 UI KR/ENG 전환
+- 해/달 토글 기반 라이트/다크 테마 전환
 
 ## 샘플 검증 결과
 
@@ -47,21 +55,25 @@ deepdetect는 영상 속 얼굴과 차량 번호판을 자동으로 감지하고
 
 ```mermaid
 flowchart TD
-    User[사용자] --> WebUI[정적 Web UI<br/>영상 업로드, 참조 이미지 업로드, 모드 선택]
+    User[운영자] --> WebUI[정적 Web UI<br/>영상 작업, 실시간 작업, 테마/언어 제어]
+    WebUI --> CandidateAPI[Candidate Analysis API]
     WebUI --> JobsAPI[FastAPI Jobs API]
     WebUI --> RealtimeAPI[FastAPI Realtime API]
 
+    CandidateAPI --> CandidateService[Candidate Service<br/>프레임 샘플링, 얼굴 후보 crop]
+    CandidateService --> TempStorage[(Temp Candidate Storage)]
+    TempStorage --> WebUI
     JobsAPI --> JobService[Job Service<br/>메타데이터, 상태, 취소]
     JobService --> Queue[Background Job Queue]
     Queue --> Pipeline[BlurVideoPipeline]
 
-    RealtimeAPI --> RealtimeSession[Realtime Session Service]
+    RealtimeAPI --> RealtimeSession[Realtime Session Service<br/>허용 목록과 대기 후보]
     RealtimeSession --> FrameProcessor[Realtime Frame Processor]
     FrameProcessor --> VisionCore[공유 Vision Core]
     Pipeline --> VisionCore
 
     VisionCore --> Detector[YOLO Region Detector<br/>얼굴과 번호판]
-    VisionCore --> Matcher[ArcFace Matcher<br/>참조 인물 판별]
+    VisionCore --> Matcher[ArcFace Matcher<br/>허용 얼굴 판별]
     VisionCore --> Tracker[IoU Tracker<br/>smoothing과 짧은 miss 유지]
     VisionCore --> Renderer[Privacy Renderer<br/>blur와 emoji overlay]
 
@@ -83,7 +95,7 @@ flowchart TD
 | `preserve` | 원본 유지 | 블러 | 블러 |
 | `character` | 이모지 대체 | 블러 | 블러 |
 
-웹 UI의 기본 제품 흐름은 `preserve`, `character`를 제공합니다. `blur` 모드는 QA 도구와 파이프라인에서 사용할 수 있습니다.
+웹 UI의 기본 흐름은 `preserve`, `character`를 제공합니다. 허용 얼굴을 선택하지 않으면 전체 블러 작업처럼 동작합니다.
 
 ## 프로젝트 구조
 
@@ -97,8 +109,8 @@ backend/
   tests/          unittest test suite
 frontend/
   index.html      deepdetect UI
-  src/app.js      upload, realtime, KR/ENG language toggle
-  styles/app.css  responsive product styling
+  src/app.js      영상/실시간 workflow, 테마와 언어 제어
+  styles/app.css  responsive light/dark product styling
 models/
   yolo/           face detector weights
   plate/          license plate detector weights
@@ -204,12 +216,17 @@ python tools/measure_blur_quality.py
 | Method | Path | 목적 |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/jobs/video` | 영상/참조 이미지 업로드와 작업 생성 |
+| `POST` | `/api/jobs/video/candidates` | 영상 업로드와 얼굴 후보 추출 |
+| `GET` | `/api/jobs/video/candidates/{analysis_id}/{candidate_id}` | 얼굴 후보 crop 조회 |
+| `POST` | `/api/jobs/video/from-candidates` | 선택한 후보로 렌더링 작업 생성 |
+| `POST` | `/api/jobs/video` | 영상과 수동 허용 얼굴 업로드로 작업 생성 |
 | `GET` | `/api/jobs/{job_id}` | 작업 상태 조회 |
 | `POST` | `/api/jobs/{job_id}/cancel` | 작업 취소 |
 | `GET` | `/api/jobs/{job_id}/result` | 결과 영상 다운로드 |
-| `POST` | `/api/realtime/sessions` | 실시간 처리 세션 생성 |
+| `POST` | `/api/realtime/sessions` | 수동 허용 얼굴을 포함한 실시간 처리 세션 생성 |
+| `POST` | `/api/realtime/frame-meta` | 카메라 프레임 처리와 후보 팝업 데이터 반환 |
 | `POST` | `/api/realtime/frame` | 카메라 프레임 1장 처리 |
+| `POST` | `/api/realtime/sessions/{session_id}/allow-face` | 실시간 후보 얼굴을 허용 목록에 추가 |
 | `WS` | `/api/realtime/sessions/{session_id}/ws` | 실시간 websocket frame endpoint |
 
 ## 테스트
@@ -221,7 +238,7 @@ node --check frontend/src/app.js
 
 현재 검증 상태:
 
-- 백엔드 테스트 31개 통과
+- 백엔드 테스트 38개 통과
 - 프론트엔드 문법 검사 통과
 - Playwright로 데스크톱/모바일 UI 렌더링 확인
 - 샘플 영상 기준 blur 결과를 시각 자료와 선명도 감소율로 확인
@@ -229,6 +246,8 @@ node --check frontend/src/app.js
 ## 한계
 
 - 너무 작거나 멀거나 심하게 가려진 얼굴은 놓칠 수 있습니다.
+- 저장 영상 후보 분석은 현재 요청 중에 실행되므로 큰 업로드에서는 백그라운드 분석 작업으로 분리하는 것이 좋습니다.
+- 실시간 허용 팝업은 tracker 기반이므로 의도한 동작을 위해 tracker를 켜두는 것이 좋습니다.
 - 번호판 처리 품질은 선택한 번호판 YOLO 모델과 대상 지역/영상 품질에 영향을 받습니다.
 - 참조 인물 판별은 시연/서비스 품질 목적이며 보안 인증 수준의 얼굴 인증이 아닙니다.
 - Apple 이모지 asset은 포함하지 않습니다. 기본 이모지는 자체 생성한 스마일 스타일 asset입니다.

@@ -42,6 +42,7 @@ const allowFaceImage = document.querySelector("#allow-face-image");
 const allowAcceptButton = document.querySelector("#allow-accept-button");
 const allowRejectButton = document.querySelector("#allow-reject-button");
 const langButtons = Array.from(document.querySelectorAll(".lang-button"));
+const themeButtons = Array.from(document.querySelectorAll(".theme-button"));
 const pageTabs = Array.from(document.querySelectorAll(".page-tab"));
 const pageViews = Array.from(document.querySelectorAll(".page-view"));
 const i18nElements = Array.from(document.querySelectorAll("[data-i18n]"));
@@ -54,6 +55,7 @@ let realtimeBusy = false;
 let submitBusy = false;
 let analyzeBusy = false;
 let currentLang = "ko";
+let currentTheme = readStoredTheme();
 let lastJob = null;
 let candidateAnalysisId = null;
 let videoCandidates = [];
@@ -63,26 +65,26 @@ const promptedRealtimeCandidateIds = new Set();
 
 const TRANSLATIONS = {
   ko: {
-    brandSubtitle: "영상 익명화",
-    serviceReady: "AI 처리 준비됨",
+    brandSubtitle: "영상 프라이버시 데스크",
+    serviceReady: "처리 파이프라인 준비",
     videoWorkspace: "영상 작업",
     realtimeWorkspace: "실시간",
-    heroEyebrow: "영상 개인정보 보호",
-    heroTitle: "공유 가능한 영상으로 안전하게 변환하세요",
-    heroLede: "얼굴과 번호판을 감지하고, 허용한 인물만 원본 유지하거나 스마일 이모지로 대체합니다.",
-    metricDetection: "샘플 얼굴 감지",
+    heroEyebrow: "공개 전 검토",
+    heroTitle: "영상 속 얼굴과 번호판을 정리하세요",
+    heroLede: "업로드한 영상에서 인물 후보를 확인하고, 허용한 얼굴만 원본 유지하거나 스마일 이모지로 대체합니다.",
+    metricDetection: "후보 검토",
     metricBlur: "블러 처리 대상",
-    metricLanguage: "여러 허용 얼굴",
-    showcaseBadge: "실제 샘플 결과",
+    metricLanguage: "허용 목록",
+    showcaseBadge: "처리 예시",
     showcaseBlurTitle: "얼굴 블러 처리",
     showcasePreserveTitle: "허용 인물만 원본 유지",
     showcaseEmojiTitle: "허용 인물 스마일 이모지",
     showcaseBlur: "Blur",
     showcasePreserve: "Preserve",
     showcaseEmoji: "Emoji",
-    savedVideo: "저장 영상",
+    savedVideo: "비디오 작업",
     uploadTitle: "허용 인물 선택 후 익명화",
-    highQuality: "고품질 처리",
+    highQuality: "렌더링 작업",
     videoFile: "처리할 영상",
     videoPlaceholder: "MP4, MOV, AVI, MKV",
     referenceFace: "추가 허용 얼굴",
@@ -131,7 +133,7 @@ const TRANSLATIONS = {
     resultEmptyTitle: "결과가 여기에 표시됩니다",
     resultEmptyCopy: "처리가 완료되면 다운로드와 미리보기가 활성화됩니다.",
     openResult: "새 탭에서 열기",
-    realtime: "실시간",
+    realtime: "라이브 미리보기",
     realtimeTitle: "실시간 허용 인물 관리",
     browserCamera: "브라우저 카메라",
     camera: "카메라",
@@ -168,26 +170,26 @@ const TRANSLATIONS = {
     statusCancelled: "취소됨",
   },
   en: {
-    brandSubtitle: "Video anonymizer",
-    serviceReady: "AI processing ready",
+    brandSubtitle: "Privacy video desk",
+    serviceReady: "Pipeline ready",
     videoWorkspace: "Video workspace",
     realtimeWorkspace: "Realtime",
-    heroEyebrow: "Video privacy protection",
-    heroTitle: "Turn raw footage into safe-to-share video",
-    heroLede: "Detect faces and license plates, then keep only allowed people original or replace them with a smile emoji.",
-    metricDetection: "sample faces detected",
+    heroEyebrow: "Pre-publish review",
+    heroTitle: "Review faces and plates before footage leaves your desk",
+    heroLede: "Inspect detected people, approve the faces that should remain visible, and render a clean export.",
+    metricDetection: "review queue",
     metricBlur: "blur targets",
-    metricLanguage: "allowed faces",
-    showcaseBadge: "Sample result",
+    metricLanguage: "allow list",
+    showcaseBadge: "Processing example",
     showcaseBlurTitle: "Face blur result",
     showcasePreserveTitle: "Only allowed people stay original",
     showcaseEmojiTitle: "Allowed people as smile emoji",
     showcaseBlur: "Blur",
     showcasePreserve: "Preserve",
     showcaseEmoji: "Emoji",
-    savedVideo: "Saved video",
+    savedVideo: "Video job",
     uploadTitle: "Select allowed people, then anonymize",
-    highQuality: "High quality",
+    highQuality: "Render job",
     videoFile: "Video file",
     videoPlaceholder: "MP4, MOV, AVI, MKV",
     referenceFace: "Additional allowed faces",
@@ -236,7 +238,7 @@ const TRANSLATIONS = {
     resultEmptyTitle: "Your result appears here",
     resultEmptyCopy: "Preview and download become available when processing finishes.",
     openResult: "Open in new tab",
-    realtime: "Realtime",
+    realtime: "Live preview",
     realtimeTitle: "Realtime allowed-person control",
     browserCamera: "Browser camera",
     camera: "Camera",
@@ -280,6 +282,9 @@ pageTabs.forEach((button) => {
 langButtons.forEach((button) => {
   button.addEventListener("click", () => applyLanguage(button.dataset.lang || "ko"));
 });
+themeButtons.forEach((button) => {
+  button.addEventListener("click", () => applyTheme(button.dataset.themeOption || "light"));
+});
 showcaseCards.forEach((button) => {
   button.addEventListener("click", () => setShowcase(button));
 });
@@ -295,6 +300,7 @@ allowRejectButton.addEventListener("click", hideAllowModal);
 syncVideoModeState();
 syncRealtimeModeState();
 renderCandidateEmpty("candidateEmpty");
+applyTheme(currentTheme);
 applyLanguage("ko");
 
 uploadForm.addEventListener("submit", async (event) => {
@@ -808,6 +814,29 @@ function applyLanguage(lang) {
   } else {
     jobStatusEl.textContent = t("statusIdle");
     jobStatusEl.dataset.status = "idle";
+  }
+}
+
+function applyTheme(theme) {
+  currentTheme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = currentTheme;
+  themeButtons.forEach((button) => {
+    const active = button.dataset.themeOption === currentTheme;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  try {
+    window.localStorage.setItem("deepdetect-theme", currentTheme);
+  } catch {
+    return;
+  }
+}
+
+function readStoredTheme() {
+  try {
+    return window.localStorage.getItem("deepdetect-theme") || "light";
+  } catch {
+    return "light";
   }
 }
 
