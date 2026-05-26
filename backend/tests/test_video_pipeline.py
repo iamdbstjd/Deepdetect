@@ -127,6 +127,41 @@ class BlurVideoPipelineTests(unittest.TestCase):
 
             self.assertEqual(stats["preserved_faces"], 4)
 
+    def test_preserves_multiple_reference_faces(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            input_path = root / "input.mp4"
+            output_path = root / "output.mp4"
+            left_reference_path = root / "left.jpg"
+            right_reference_path = root / "right.jpg"
+            self._write_two_face_video(input_path)
+            cv2.imwrite(str(left_reference_path), self._solid_image((0, 0, 255)))
+            cv2.imwrite(str(right_reference_path), self._solid_image((0, 255, 0)))
+            pipeline = BlurVideoPipeline(
+                detector=StaticDetector(
+                    [
+                        Detection("face", 0, 0, 32, 64, 1.0),
+                        Detection("face", 32, 0, 64, 64, 1.0),
+                    ]
+                ),
+                renderer=PrivacyRenderer(face_padding=0.0),
+                face_matcher=HistogramFaceMatcher(threshold=0.5),
+            )
+
+            stats = pipeline.process_video(
+                input_path,
+                output_path,
+                reference_image_path=None,
+                reference_image_paths=[left_reference_path, right_reference_path],
+                mode="preserve",
+                character_id=None,
+                on_progress=lambda _value, _message: None,
+                is_cancelled=lambda: False,
+            )
+
+            self.assertEqual(stats["reference_faces"], 2)
+            self.assertEqual(stats["preserved_faces"], 8)
+
     def test_character_mode_overlays_matching_reference_face(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -218,6 +253,27 @@ class BlurVideoPipelineTests(unittest.TestCase):
             frame[:, 32:] = (255, 255, 255)
             writer.write(frame)
         writer.release()
+
+    def _write_two_face_video(self, path: Path) -> None:
+        writer = cv2.VideoWriter(
+            str(path),
+            cv2.VideoWriter_fourcc(*"mp4v"),
+            5,
+            (64, 64),
+        )
+        self.assertTrue(writer.isOpened())
+        for _ in range(4):
+            frame = np.zeros((64, 64, 3), dtype=np.uint8)
+            frame[:, :32] = (0, 0, 255)
+            frame[:, 32:] = (0, 255, 0)
+            writer.write(frame)
+        writer.release()
+
+    @staticmethod
+    def _solid_image(color: tuple[int, int, int]) -> np.ndarray:
+        image = np.zeros((64, 64, 3), dtype=np.uint8)
+        image[:, :] = color
+        return image
 
 
 if __name__ == "__main__":

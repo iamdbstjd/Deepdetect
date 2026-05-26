@@ -71,7 +71,12 @@ class VideoJobProcessor:
             stats = self.pipeline.process_video(
                 source,
                 result_path,
-                reference_image_path=Path(record.reference_image_path),
+                reference_image_path=(
+                    Path(record.reference_image_path) if record.reference_image_path else None
+                ),
+                reference_image_paths=[
+                    Path(path) for path in (record.reference_image_paths or [])
+                ],
                 mode=record.mode,
                 character_id=record.character_id,
                 on_progress=on_progress,

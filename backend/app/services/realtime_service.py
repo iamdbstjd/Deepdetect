@@ -12,11 +12,12 @@ from backend.app.services.realtime_processor import RealtimeRuntime
 @dataclass
 class RealtimeSession:
     session_id: str
-    reference_image_path: str
     mode: str
     character_id: str | None
     created_at: float
     updated_at: float
+    reference_image_path: str = ""
+    reference_image_paths: list[str] | None = None
     runtime: RealtimeRuntime | None = None
 
     def to_public_dict(self) -> dict[str, object]:
@@ -25,6 +26,7 @@ class RealtimeSession:
             "status": "ready",
             "mode": self.mode,
             "character_id": self.character_id,
+            "reference_count": len(self.reference_image_paths or []),
             "websocket_url": f"/api/realtime/sessions/{self.session_id}/ws",
         }
 
@@ -37,16 +39,21 @@ class RealtimeSessionService:
 
     def create_session(
         self,
-        reference_image_path: Path,
+        reference_image_path: Path | None,
         mode: str,
         character_id: str | None,
         runtime: RealtimeRuntime | None = None,
         session_id: str | None = None,
+        reference_image_paths: list[Path] | None = None,
     ) -> RealtimeSession:
         now = time.time()
+        references = [str(path) for path in (reference_image_paths or [])]
+        if reference_image_path and str(reference_image_path) not in references:
+            references.insert(0, str(reference_image_path))
         session = RealtimeSession(
             session_id=session_id or uuid.uuid4().hex,
-            reference_image_path=str(reference_image_path),
+            reference_image_path=references[0] if references else "",
+            reference_image_paths=references,
             mode=mode,
             character_id=character_id,
             created_at=now,

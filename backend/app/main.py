@@ -133,7 +133,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(build_jobs_router(job_service, job_queue, settings))
+app.include_router(build_jobs_router(job_service, job_queue, settings, detector))
 app.include_router(build_realtime_router(realtime_service, realtime_frame_processor, settings))
 
 

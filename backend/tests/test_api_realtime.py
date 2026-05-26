@@ -64,6 +64,32 @@ class ApiRealtimeTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    def test_session_accepts_multiple_references_and_frame_metadata(self) -> None:
+        reference_bytes = self._image_bytes()
+        frame_bytes = self._image_bytes()
+        with TestClient(self.main.app) as client:
+            session_response = client.post(
+                "/api/realtime/sessions",
+                files=[
+                    ("reference_images", ("face1.jpg", reference_bytes, "image/jpeg")),
+                    ("reference_images", ("face2.jpg", reference_bytes, "image/jpeg")),
+                ],
+                data={"mode": "preserve"},
+            )
+            self.assertEqual(session_response.status_code, 200, session_response.text)
+            self.assertEqual(session_response.json()["reference_count"], 2)
+
+            frame_response = client.post(
+                "/api/realtime/frame-meta",
+                files={"frame": ("frame.jpg", frame_bytes, "image/jpeg")},
+                data={"session_id": session_response.json()["session_id"]},
+            )
+
+        self.assertEqual(frame_response.status_code, 200, frame_response.text)
+        payload = frame_response.json()
+        self.assertTrue(payload["image"].startswith("data:image/jpeg;base64,"))
+        self.assertEqual(payload["candidates"], [])
+
     def test_rejects_oversized_frame_upload(self) -> None:
         reference_bytes = self._image_bytes()
         oversized = b"x" * (self.main.settings.max_realtime_frame_bytes + 1)

@@ -81,6 +81,37 @@ class ApiJobFlowTests(unittest.TestCase):
         remaining = [path for path in uploads_dir.iterdir() if path.name != ".gitkeep"]
         self.assertEqual(remaining, [])
 
+    def test_upload_accepts_multiple_reference_images(self) -> None:
+        video_path = self._make_video()
+        reference_bytes = self._make_reference_image()
+        with TestClient(self.main.app) as client:
+            response = client.post(
+                "/api/jobs/video",
+                files=[
+                    ("video", ("sample.mp4", video_path.read_bytes(), "video/mp4")),
+                    ("reference_images", ("face1.jpg", reference_bytes, "image/jpeg")),
+                    ("reference_images", ("face2.jpg", reference_bytes, "image/jpeg")),
+                ],
+                data={"mode": "preserve"},
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        record = self.main.job_service.get(response.json()["job_id"])
+        self.assertEqual(len(record.reference_image_paths or []), 2)
+
+    def test_candidate_analysis_endpoint_returns_analysis(self) -> None:
+        video_path = self._make_video()
+        with TestClient(self.main.app) as client:
+            response = client.post(
+                "/api/jobs/video/candidates",
+                files={"video": ("sample.mp4", video_path.read_bytes(), "video/mp4")},
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertIn("analysis_id", payload)
+        self.assertEqual(payload["candidates"], [])
+
     def test_result_download_rejects_path_outside_job_output_dir(self) -> None:
         outside = Path(self.tmp.name) / "outside.mp4"
         outside.write_bytes(b"outside")

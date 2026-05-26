@@ -22,7 +22,8 @@ class JobRecord:
     mode: str
     character_id: str | None
     video_path: str
-    reference_image_path: str
+    reference_image_path: str = ""
+    reference_image_paths: list[str] | None = None
     result_path: str | None = None
     progress: int = 0
     message: str = ""
@@ -38,6 +39,12 @@ class JobRecord:
             self.updated_at = now
         if not isinstance(self.status, JobStatus):
             self.status = JobStatus(self.status)
+        if self.reference_image_paths is None:
+            self.reference_image_paths = []
+        if self.reference_image_path and not self.reference_image_paths:
+            self.reference_image_paths = [self.reference_image_path]
+        if self.reference_image_paths and not self.reference_image_path:
+            self.reference_image_path = self.reference_image_paths[0]
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -65,4 +72,3 @@ class JobRecord:
     @property
     def result_file(self) -> Path | None:
         return Path(self.result_path) if self.result_path else None
-

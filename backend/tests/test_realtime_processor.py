@@ -54,6 +54,52 @@ class RealtimeFrameProcessorTests(unittest.TestCase):
         with self.assertRaises(RealtimeFrameError):
             processor.process_frame(encoded.tobytes(), runtime)
 
+    def test_prompts_for_unknown_face_after_threshold(self) -> None:
+        frame = self._frame()
+        ok, encoded = cv2.imencode(".jpg", frame)
+        self.assertTrue(ok)
+        processor = RealtimeFrameProcessor(
+            detector=StaticDetector([Detection("face", 0, 0, 64, 64, 1.0)]),
+            renderer=PrivacyRenderer(face_padding=0.0),
+            face_matcher=None,
+            character_store=None,
+            tracker_factory=lambda: DetectionTracker(max_missing=1),
+        )
+        runtime = processor.create_runtime(None, "preserve", None)
+
+        first = processor.process_frame_with_metadata(encoded.tobytes(), runtime, now=0.0)
+        second = processor.process_frame_with_metadata(encoded.tobytes(), runtime, now=10.5)
+
+        self.assertEqual(first.candidates, [])
+        self.assertEqual(len(second.candidates), 1)
+        self.assertTrue(second.candidates[0].candidate_id.startswith("rt_"))
+
+    def test_allow_pending_face_adds_reference_matcher(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            frame = self._frame()
+            ok, encoded = cv2.imencode(".jpg", frame)
+            self.assertTrue(ok)
+            processor = RealtimeFrameProcessor(
+                detector=StaticDetector([Detection("face", 0, 0, 64, 64, 1.0)]),
+                renderer=PrivacyRenderer(face_padding=0.0),
+                face_matcher=HistogramFaceMatcher(threshold=0.5),
+                character_store=None,
+                tracker_factory=lambda: DetectionTracker(max_missing=1),
+            )
+            runtime = processor.create_runtime(None, "preserve", None)
+
+            processor.process_frame_with_metadata(encoded.tobytes(), runtime, now=0.0)
+            result = processor.process_frame_with_metadata(encoded.tobytes(), runtime, now=10.5)
+            accepted = processor.allow_pending_face(
+                runtime,
+                result.candidates[0].candidate_id,
+                root / "allowed.jpg",
+            )
+
+            self.assertTrue(accepted)
+            self.assertEqual(len(runtime.prepared_matchers), 1)
+
     @staticmethod
     def _frame() -> np.ndarray:
         frame = np.zeros((64, 64, 3), dtype=np.uint8)

@@ -28,19 +28,24 @@ class JobService:
     def create_job(
         self,
         video_path: Path,
-        reference_image_path: Path,
-        mode: str,
-        character_id: str | None,
+        reference_image_path: Path | None = None,
+        mode: str = "preserve",
+        character_id: str | None = None,
         job_id: str | None = None,
+        reference_image_paths: list[Path] | None = None,
     ) -> JobRecord:
         job_id = job_id or uuid.uuid4().hex
+        references = [str(path) for path in (reference_image_paths or [])]
+        if reference_image_path and str(reference_image_path) not in references:
+            references.insert(0, str(reference_image_path))
         record = JobRecord(
             job_id=job_id,
             status=JobStatus.QUEUED,
             mode=mode,
             character_id=character_id,
             video_path=str(video_path),
-            reference_image_path=str(reference_image_path),
+            reference_image_path=references[0] if references else "",
+            reference_image_paths=references,
             progress=0,
             message="Queued",
         )

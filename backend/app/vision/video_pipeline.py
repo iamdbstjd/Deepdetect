@@ -7,7 +7,7 @@ import cv2
 
 from backend.app.vision.character_overlay import CharacterAssetStore
 from backend.app.vision.detections import RegionDetector
-from backend.app.vision.face_identity import FaceIdentityMatcher
+from backend.app.vision.face_identity import FaceIdentityMatcher, PreparedFaceMatcher
 from backend.app.vision.renderer import OverlayInstruction, PrivacyRenderer
 from backend.app.vision.tracker import DetectionTracker
 
@@ -48,6 +48,7 @@ class BlurVideoPipeline:
         character_id: str | None,
         on_progress: ProgressCallback,
         is_cancelled: CancelledCallback,
+        reference_image_paths: list[Path] | None = None,
     ) -> dict[str, int]:
         capture = cv2.VideoCapture(str(input_path))
         if not capture.isOpened():
@@ -80,9 +81,10 @@ class BlurVideoPipeline:
         retained_missing = 0
         if self.tracker:
             self.tracker.reset()
-        prepared_matcher = None
-        if self.face_matcher and reference_image_path:
-            prepared_matcher = self.face_matcher.prepare(reference_image_path)
+        prepared_matchers = self._prepare_matchers(
+            reference_image_path,
+            reference_image_paths,
+        )
         character_image = None
         if mode == "character" and self.character_store:
             character_image = self.character_store.load(character_id)
@@ -98,8 +100,11 @@ class BlurVideoPipeline:
                 render_detections = []
                 overlays: list[OverlayInstruction] = []
                 for detection in detections:
-                    if detection.kind == "face" and prepared_matcher and detection.observed:
-                        is_reference = prepared_matcher.is_match(frame, detection)
+                    if detection.kind == "face" and prepared_matchers and detection.observed:
+                        is_reference = any(
+                            matcher.is_match(frame, detection)
+                            for matcher in prepared_matchers
+                        )
                         if mode == "preserve" and is_reference:
                             preserved_faces += 1
                             continue
@@ -133,6 +138,7 @@ class BlurVideoPipeline:
             "retained_missing_detections": retained_missing,
             "preserved_faces": preserved_faces,
             "overlaid_faces": overlaid_faces,
+            "reference_faces": len(prepared_matchers),
             "width": width,
             "height": height,
         }
@@ -142,3 +148,22 @@ class BlurVideoPipeline:
         if total_frames <= 0:
             return min(95, 5 + processed)
         return min(99, max(1, int((processed / total_frames) * 100)))
+
+    def _prepare_matchers(
+        self,
+        reference_image_path: Path | None,
+        reference_image_paths: list[Path] | None,
+    ) -> list[PreparedFaceMatcher]:
+        if not self.face_matcher:
+            return []
+        unique_paths: list[Path] = []
+        seen: set[str] = set()
+        for path in [reference_image_path, *(reference_image_paths or [])]:
+            if not path:
+                continue
+            normalized = str(path)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            unique_paths.append(path)
+        return [self.face_matcher.prepare(path) for path in unique_paths]
