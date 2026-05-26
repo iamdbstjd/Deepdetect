@@ -11,6 +11,10 @@ const referenceCountEls = {
   video: document.querySelector('[data-reference-count="video"]'),
   realtime: document.querySelector('[data-reference-count="realtime"]'),
 };
+const referenceGuides = {
+  video: document.querySelector('[data-reference-guide="video"]'),
+  realtime: document.querySelector('[data-reference-guide="realtime"]'),
+};
 const candidateGrid = document.querySelector("#candidate-grid");
 const modeInputs = Array.from(document.querySelectorAll('input[name="mode"]'));
 const realtimeModeInputs = Array.from(document.querySelectorAll('input[name="realtime_mode"]'));
@@ -96,8 +100,10 @@ const TRANSLATIONS = {
     realtimeReferenceFace: "처음부터 허용할 얼굴",
     imagePlaceholder: "정면, 좌우 45도, 좌우 측면 5장 권장",
     optionalImagePlaceholder: "선택 사항, 5장 권장",
-    referenceGuideTitle: "다각도 허용 얼굴",
-    referenceGuideCopy: "정면과 좌우 각도를 함께 넣으면 옆모습에서 블러될 가능성이 줄어듭니다.",
+    filesSelected: "{count}개 파일",
+    referenceGuideTitle: "얼굴 등록 가이드",
+    referenceGuideCopy: "정면에서 시작해 좌우로 천천히 돌린 사진 5장을 추가하세요.",
+    referenceGuideStage: "얼굴을 중앙에 맞추세요",
     referenceGuideCount: "{count} / 5",
     referenceGuideReady: "{count}장 준비됨",
     angleFront: "정면",
@@ -213,8 +219,10 @@ const TRANSLATIONS = {
     realtimeReferenceFace: "Initially allowed faces",
     imagePlaceholder: "Front, 45-degree, and profile shots recommended",
     optionalImagePlaceholder: "Optional, 5 shots recommended",
-    referenceGuideTitle: "Multi-angle allowed face",
-    referenceGuideCopy: "Add front and side angles to reduce false blur when the person turns.",
+    filesSelected: "{count} files",
+    referenceGuideTitle: "Face reference guide",
+    referenceGuideCopy: "Start facing forward, then add five photos as the face turns left and right.",
+    referenceGuideStage: "Center the face in the frame",
     referenceGuideCount: "{count} / 5",
     referenceGuideReady: "{count} ready",
     angleFront: "Front",
@@ -756,19 +764,20 @@ function updateFileName(input, label, placeholderKey) {
   } else if (files.length === 1) {
     label.textContent = files[0].name;
   } else {
-    label.textContent = `${files.length} files`;
+    label.textContent = t("filesSelected").replace("{count}", String(files.length));
   }
   input.closest(".file-control").classList.toggle("has-file", files.length > 0);
   syncReferenceGuideCount(input, files.length);
 }
 
 function syncReferenceGuideCount(input, count) {
-  const target =
+  const scope =
     input === referenceInput
-      ? referenceCountEls.video
+      ? "video"
       : input === realtimeReferenceInput
-        ? referenceCountEls.realtime
+        ? "realtime"
         : null;
+  const target = scope ? referenceCountEls[scope] : null;
   if (!target) {
     return;
   }
@@ -776,6 +785,29 @@ function syncReferenceGuideCount(input, count) {
   target.dataset.i18n = key;
   target.textContent = t(key).replace("{count}", String(count));
   target.classList.toggle("is-ready", count >= 5);
+  setReferenceGuideProgress(scope, count);
+}
+
+function setReferenceGuideProgress(scope, count) {
+  const guide = referenceGuides[scope];
+  if (!guide) {
+    return;
+  }
+  const normalizedCount = Math.max(0, Math.min(5, Number(count) || 0));
+  guide.classList.toggle("is-ready", normalizedCount >= 5);
+  guide.querySelectorAll("[data-angle-step]").forEach((step) => {
+    setGuideStepState(step, Number(step.dataset.angleStep), normalizedCount);
+  });
+  guide.querySelectorAll("[data-guide-dot]").forEach((dot) => {
+    setGuideStepState(dot, Number(dot.dataset.guideDot), normalizedCount);
+  });
+}
+
+function setGuideStepState(element, stepNumber, count) {
+  const complete = count >= stepNumber;
+  const next = count < 5 && stepNumber === count + 1;
+  element.classList.toggle("is-complete", complete);
+  element.classList.toggle("is-next", next);
 }
 
 function getVideoMode() {

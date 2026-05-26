@@ -587,11 +587,21 @@ h2 {
 
 .reference-guide {
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 14px;
+  padding: 15px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface-soft);
+  background:
+    linear-gradient(180deg, rgba(12, 124, 114, 0.05), transparent 58%),
+    var(--surface-soft);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.reference-guide.is-ready {
+  border-color: rgba(12, 124, 114, 0.55);
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 .reference-guide-header {
@@ -639,33 +649,235 @@ h2 {
   color: var(--accent-dark);
 }
 
+.reference-guide-body {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.48fr) minmax(0, 0.52fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.face-guide-stage {
+  position: relative;
+  overflow: hidden;
+  min-height: 162px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(53, 201, 184, 0.22), transparent 34%),
+    linear-gradient(180deg, #111b26 0%, #070d13 100%);
+}
+
+.face-guide-stage::before,
+.face-guide-stage::after {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.face-guide-stage::before {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.face-guide-stage::after {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) 50% 28% / 42px 1px no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) 50% 54% / 82px 1px no-repeat;
+}
+
+.face-guide-orbit,
+.face-guide-ring {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+}
+
+.face-guide-orbit {
+  width: 118px;
+  height: 136px;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+}
+
+.face-guide-ring {
+  width: 82px;
+  height: 104px;
+  border: 2px solid rgba(53, 201, 184, 0.9);
+  box-shadow:
+    0 0 0 5px rgba(53, 201, 184, 0.08),
+    inset 0 0 24px rgba(53, 201, 184, 0.1);
+}
+
+.reference-guide.is-ready .face-guide-ring {
+  border-color: rgba(120, 233, 218, 0.98);
+  box-shadow:
+    0 0 0 6px rgba(53, 201, 184, 0.14),
+    0 0 24px rgba(53, 201, 184, 0.2),
+    inset 0 0 24px rgba(53, 201, 184, 0.16);
+}
+
+.face-guide-ring::before,
+.face-guide-ring::after,
+.face-guide-ring i {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.face-guide-ring::before {
+  top: 21px;
+  width: 31px;
+  height: 37px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 50% 50% 46% 46%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.face-guide-ring::after {
+  bottom: 20px;
+  width: 50px;
+  height: 23px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px 999px 18px 18px;
+  border-bottom-color: transparent;
+}
+
+.face-guide-ring i {
+  top: 57px;
+  width: 26px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.guide-orbit-dot {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.guide-orbit-dot.is-complete,
+.guide-orbit-dot.is-next {
+  border-color: rgba(120, 233, 218, 0.95);
+  background: var(--accent);
+  box-shadow: 0 0 0 5px rgba(53, 201, 184, 0.18);
+}
+
+.guide-orbit-dot-front {
+  left: 50%;
+  top: 17px;
+  transform: translateX(-50%);
+}
+
+.guide-orbit-dot-left45 {
+  left: 34px;
+  top: 43px;
+}
+
+.guide-orbit-dot-right45 {
+  right: 34px;
+  top: 43px;
+}
+
+.guide-orbit-dot-left {
+  left: 27px;
+  bottom: 48px;
+}
+
+.guide-orbit-dot-right {
+  right: 27px;
+  bottom: 48px;
+}
+
+.face-guide-instruction {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  display: block;
+  overflow: hidden;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(7, 13, 19, 0.72);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .angle-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 7px;
 }
 
 .angle-grid span {
   display: grid;
-  gap: 5px;
-  min-height: 58px;
-  padding: 9px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 7px 9px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--control);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .angle-grid b {
-  color: var(--accent);
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
   font-size: 11px;
   line-height: 1;
 }
 
 .angle-grid small {
+  overflow: hidden;
   color: var(--text);
   font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.angle-grid span.is-next {
+  border-color: rgba(12, 124, 114, 0.45);
+  box-shadow: inset 3px 0 0 rgba(12, 124, 114, 0.55);
+}
+
+.angle-grid span.is-complete {
+  border-color: rgba(12, 124, 114, 0.6);
+  background: var(--accent-soft);
+}
+
+.angle-grid span.is-complete b {
+  border-color: transparent;
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .mode-group {
@@ -1388,6 +1600,14 @@ h2 {
   .page-tabs,
   .showcase-strip {
     grid-template-columns: 1fr;
+  }
+
+  .reference-guide-body {
+    grid-template-columns: 1fr;
+  }
+
+  .face-guide-stage {
+    min-height: 170px;
   }
 
   .angle-grid {
