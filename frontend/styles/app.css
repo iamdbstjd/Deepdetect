@@ -167,6 +167,42 @@ a {
   box-shadow: 0 0 0 4px rgba(33, 166, 122, 0.14);
 }
 
+.page-tabs {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.page-tab {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.page-tab.is-active {
+  background: var(--surface-strong);
+  color: #ffffff;
+}
+
+.page-view {
+  display: none;
+}
+
+.page-view.is-active {
+  display: block;
+}
+
 .hero-section {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
@@ -623,6 +659,91 @@ h2 {
   color: var(--muted);
 }
 
+.candidate-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.candidate-panel > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.candidate-panel strong {
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.candidate-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+  min-height: 82px;
+}
+
+.candidate-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  min-height: 82px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--muted);
+  text-align: center;
+}
+
+.candidate-card {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.candidate-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: #0d1418;
+  object-fit: cover;
+}
+
+.candidate-card span {
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.candidate-card small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.candidate-card.is-selected {
+  border-color: rgba(12, 124, 114, 0.7);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 4px rgba(12, 124, 114, 0.08);
+}
+
 .primary-button,
 .secondary-button,
 .download-button {
@@ -982,9 +1103,82 @@ h2 {
   background: var(--surface-soft);
 }
 
+.realtime-page-panel {
+  padding: 24px;
+}
+
+.realtime-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.42fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.realtime-controls {
+  display: grid;
+  gap: 14px;
+}
+
+.realtime-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.allow-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 20, 25, 0.52);
+}
+
+.allow-modal.hidden {
+  display: none;
+}
+
+.allow-dialog {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 16px;
+  width: min(520px, 100%);
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.allow-dialog img {
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius);
+  background: #0d1418;
+  object-fit: cover;
+}
+
+.allow-dialog h2 {
+  font-size: 22px;
+}
+
+.allow-dialog p:not(.eyebrow) {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.allow-dialog .action-row {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
 @media (max-width: 980px) {
   .hero-section,
-  .workspace {
+  .workspace,
+  .realtime-layout,
+  .realtime-preview-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1042,11 +1236,22 @@ h2 {
   .summary-grid,
   .workflow-steps,
   .action-row,
+  .page-tabs,
   .showcase-strip {
     grid-template-columns: 1fr;
   }
 
   .file-control {
     min-height: 76px;
+  }
+
+  .allow-dialog {
+    grid-template-columns: 1fr;
+  }
+
+  .allow-dialog img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
   }
 }
