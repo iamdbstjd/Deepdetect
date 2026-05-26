@@ -8,11 +8,11 @@ The current build prioritizes saved-video quality and includes a browser-camera 
 
 ## UI Preview
 
-English dark workspace:
+English dark video review console:
 
 ![deepdetect dark UI](samples/reports/ui_en.png)
 
-Korean light workspace:
+Korean light video review console:
 
 ![deepdetect light UI](samples/reports/ui_ko.png)
 
@@ -21,6 +21,7 @@ Korean light workspace:
 - Upload a video and detect face candidates before rendering.
 - Select one or more people to allow; everyone else stays blurred.
 - Upload multiple manual allow-list face images when candidate detection is not enough.
+- Keep saved-video work and realtime preview in separate product surfaces.
 - Detect faces and license plates using YOLO model wrappers.
 - Preserve allowed people or replace allowed faces with a smile emoji overlay.
 - Keep emoji overlays stable with IoU tracking and bounding-box smoothing.
