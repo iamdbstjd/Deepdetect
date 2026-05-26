@@ -198,6 +198,15 @@
                         <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
                       </div>
                     </div>
+                    <div class="reference-capture-actions">
+                      <button class="secondary-button reference-capture-button" type="button" data-capture-open="video" data-i18n="captureReference">
+                        노트북 카메라로 촬영
+                      </button>
+                      <button class="secondary-button reference-clear-button hidden" type="button" data-capture-clear="video" data-i18n="clearCapturedReferences">
+                        촬영 사진 초기화
+                      </button>
+                    </div>
+                    <div class="reference-capture-strip hidden" data-capture-strip="video" aria-live="polite"></div>
                   </section>
 
                   <section class="candidate-panel" aria-labelledby="candidate-title">
@@ -379,6 +388,15 @@
                       <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
                     </div>
                   </div>
+                  <div class="reference-capture-actions">
+                    <button class="secondary-button reference-capture-button" type="button" data-capture-open="realtime" data-i18n="captureReference">
+                      노트북 카메라로 촬영
+                    </button>
+                    <button class="secondary-button reference-clear-button hidden" type="button" data-capture-clear="realtime" data-i18n="clearCapturedReferences">
+                      촬영 사진 초기화
+                    </button>
+                  </div>
+                  <div class="reference-capture-strip hidden" data-capture-strip="realtime" aria-live="polite"></div>
                 </section>
 
                 <fieldset class="mode-group realtime-mode-group">
@@ -438,6 +456,57 @@
             </button>
             <button id="allow-accept-button" class="primary-button" type="button" data-i18n="allowPerson">
               허용
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="capture-modal" class="capture-modal hidden" role="dialog" aria-modal="true" aria-labelledby="capture-title">
+        <div class="capture-dialog">
+          <div class="capture-dialog-header">
+            <div>
+              <p class="eyebrow" data-i18n="captureEyebrow">허용 얼굴 촬영</p>
+              <h2 id="capture-title" data-i18n="captureTitle">노트북 카메라로 얼굴 등록</h2>
+              <p data-i18n="captureCopy">각도 단계에 맞춰 한 장씩 촬영하면 업로드 사진과 함께 전송됩니다.</p>
+            </div>
+            <button id="capture-close-button" class="secondary-button compact-button" type="button" data-i18n="captureClose">
+              닫기
+            </button>
+          </div>
+
+          <div class="capture-layout">
+            <div class="capture-preview">
+              <video id="reference-capture-video" autoplay muted playsinline></video>
+              <div class="capture-face-overlay" aria-hidden="true">
+                <span></span>
+              </div>
+              <canvas id="reference-capture-canvas" class="hidden"></canvas>
+            </div>
+
+            <div class="capture-panel">
+              <span id="capture-progress" class="reference-count">0 / 5</span>
+              <strong id="capture-step-title">정면</strong>
+              <p id="capture-step-copy" data-i18n="captureStepCopy">얼굴을 프레임 중앙에 두고 현재 각도에서 촬영하세요.</p>
+              <div class="angle-grid capture-angle-grid" aria-label="촬영 각도">
+                <span data-capture-step="1"><b>01</b><small data-i18n="angleFront">정면</small></span>
+                <span data-capture-step="2"><b>02</b><small data-i18n="angleLeft45">왼쪽 45도</small></span>
+                <span data-capture-step="3"><b>03</b><small data-i18n="angleRight45">오른쪽 45도</small></span>
+                <span data-capture-step="4"><b>04</b><small data-i18n="angleLeftProfile">왼쪽 측면</small></span>
+                <span data-capture-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
+              </div>
+            </div>
+          </div>
+
+          <p id="capture-message" class="notice-line" data-i18n="captureInitialMessage">
+            카메라 권한을 허용한 뒤 단계별로 촬영하세요.
+          </p>
+
+          <div class="action-row capture-action-row">
+            <button id="capture-reset-button" class="secondary-button" type="button" data-i18n="clearCapturedReferences">
+              촬영 사진 초기화
+            </button>
+            <button id="capture-shot-button" class="primary-button" type="button">
+              정면 촬영
             </button>
           </div>
         </div>

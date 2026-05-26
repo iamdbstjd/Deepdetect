@@ -49,6 +49,21 @@ const allowModal = document.querySelector("#allow-modal");
 const allowFaceImage = document.querySelector("#allow-face-image");
 const allowAcceptButton = document.querySelector("#allow-accept-button");
 const allowRejectButton = document.querySelector("#allow-reject-button");
+const captureOpenButtons = Array.from(document.querySelectorAll("[data-capture-open]"));
+const captureClearButtons = Array.from(document.querySelectorAll("[data-capture-clear]"));
+const captureStripEls = {
+  video: document.querySelector('[data-capture-strip="video"]'),
+  realtime: document.querySelector('[data-capture-strip="realtime"]'),
+};
+const captureModal = document.querySelector("#capture-modal");
+const captureCloseButton = document.querySelector("#capture-close-button");
+const captureResetButton = document.querySelector("#capture-reset-button");
+const captureShotButton = document.querySelector("#capture-shot-button");
+const referenceCaptureVideo = document.querySelector("#reference-capture-video");
+const referenceCaptureCanvas = document.querySelector("#reference-capture-canvas");
+const captureProgressEl = document.querySelector("#capture-progress");
+const captureStepTitle = document.querySelector("#capture-step-title");
+const captureMessage = document.querySelector("#capture-message");
 const langButtons = Array.from(document.querySelectorAll(".lang-button"));
 const themeButtons = Array.from(document.querySelectorAll(".theme-button"));
 const pageTabs = Array.from(document.querySelectorAll(".page-tab"));
@@ -69,7 +84,24 @@ let candidateAnalysisId = null;
 let videoCandidates = [];
 let selectedCandidateIds = new Set();
 let pendingRealtimeCandidate = null;
+let activeCaptureScope = null;
+let referenceCaptureStream = null;
+const capturedReferenceFiles = {
+  video: [],
+  realtime: [],
+};
+const capturedReferenceUrls = {
+  video: [],
+  realtime: [],
+};
 const promptedRealtimeCandidateIds = new Set();
+const CAPTURE_STEPS = [
+  { key: "angleFront", slug: "front" },
+  { key: "angleLeft45", slug: "left-45" },
+  { key: "angleRight45", slug: "right-45" },
+  { key: "angleLeftProfile", slug: "left-profile" },
+  { key: "angleRightProfile", slug: "right-profile" },
+];
 
 const TRANSLATIONS = {
   ko: {
@@ -101,6 +133,8 @@ const TRANSLATIONS = {
     imagePlaceholder: "정면, 좌우 45도, 좌우 측면 5장 권장",
     optionalImagePlaceholder: "선택 사항, 5장 권장",
     filesSelected: "{count}개 파일",
+    captureReference: "노트북 카메라로 촬영",
+    clearCapturedReferences: "촬영 사진 초기화",
     referenceGuideTitle: "얼굴 등록 가이드",
     referenceGuideCopy: "정면에서 시작해 좌우로 천천히 돌린 사진 5장을 추가하세요.",
     referenceGuideStage: "얼굴을 중앙에 맞추세요",
@@ -184,6 +218,21 @@ const TRANSLATIONS = {
     realtimeFrameFailed: "실시간 프레임 처리 실패",
     frameCaptureFailed: "프레임 캡처 실패",
     renderedFrameFailed: "처리된 프레임 표시 실패",
+    captureEyebrow: "허용 얼굴 촬영",
+    captureTitle: "노트북 카메라로 얼굴 등록",
+    captureCopy: "각도 단계에 맞춰 한 장씩 촬영하면 업로드 사진과 함께 전송됩니다.",
+    captureClose: "닫기",
+    captureStepCopy: "얼굴을 프레임 중앙에 두고 현재 각도에서 촬영하세요.",
+    captureInitialMessage: "카메라 권한을 허용한 뒤 단계별로 촬영하세요.",
+    captureCameraStarting: "카메라를 여는 중...",
+    captureCameraFailed: "카메라를 열 수 없습니다",
+    captureNotSupported: "이 브라우저는 카메라 촬영을 지원하지 않습니다.",
+    captureButton: "{angle} 촬영",
+    captureCompleteButton: "촬영 완료",
+    captureDone: "5장 촬영이 준비되었습니다. 닫고 처리하면 업로드 사진과 함께 전송됩니다.",
+    captureSaved: "{angle} 촬영 완료",
+    capturedLabel: "촬영 {number}",
+    removeCapturedReference: "삭제",
     statusIdle: "대기 중",
     statusQueued: "대기열",
     statusProcessing: "처리 중",
@@ -220,6 +269,8 @@ const TRANSLATIONS = {
     imagePlaceholder: "Front, 45-degree, and profile shots recommended",
     optionalImagePlaceholder: "Optional, 5 shots recommended",
     filesSelected: "{count} files",
+    captureReference: "Use laptop camera",
+    clearCapturedReferences: "Clear captured photos",
     referenceGuideTitle: "Face reference guide",
     referenceGuideCopy: "Start facing forward, then add five photos as the face turns left and right.",
     referenceGuideStage: "Center the face in the frame",
@@ -303,6 +354,21 @@ const TRANSLATIONS = {
     realtimeFrameFailed: "Realtime frame processing failed",
     frameCaptureFailed: "Frame capture failed",
     renderedFrameFailed: "Failed to display processed frame",
+    captureEyebrow: "Allowed face capture",
+    captureTitle: "Register a face with the laptop camera",
+    captureCopy: "Capture each angle and the photos will be sent with uploaded reference images.",
+    captureClose: "Close",
+    captureStepCopy: "Keep the face centered in the frame, then capture the current angle.",
+    captureInitialMessage: "Allow camera access, then capture each step.",
+    captureCameraStarting: "Opening camera...",
+    captureCameraFailed: "Could not open the camera",
+    captureNotSupported: "This browser does not support camera capture.",
+    captureButton: "Capture {angle}",
+    captureCompleteButton: "Capture complete",
+    captureDone: "Five captured photos are ready. Close and process to upload them with references.",
+    captureSaved: "Captured {angle}",
+    capturedLabel: "Shot {number}",
+    removeCapturedReference: "Remove",
     statusIdle: "Idle",
     statusQueued: "Queued",
     statusProcessing: "Processing",
@@ -333,6 +399,29 @@ realtimeModeInputs.forEach((input) => input.addEventListener("change", syncRealt
 analyzeButton.addEventListener("click", analyzeCandidates);
 allowAcceptButton.addEventListener("click", allowRealtimeCandidate);
 allowRejectButton.addEventListener("click", hideAllowModal);
+captureOpenButtons.forEach((button) => {
+  button.addEventListener("click", () => openReferenceCapture(button.dataset.captureOpen));
+});
+captureClearButtons.forEach((button) => {
+  button.addEventListener("click", () => clearCapturedReferences(button.dataset.captureClear));
+});
+captureCloseButton.addEventListener("click", closeReferenceCapture);
+captureResetButton.addEventListener("click", () => {
+  if (activeCaptureScope) {
+    clearCapturedReferences(activeCaptureScope);
+  }
+});
+captureShotButton.addEventListener("click", captureReferencePhoto);
+captureModal.addEventListener("click", (event) => {
+  if (event.target === captureModal) {
+    closeReferenceCapture();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !captureModal.classList.contains("hidden")) {
+    closeReferenceCapture();
+  }
+});
 syncVideoModeState();
 syncRealtimeModeState();
 renderCandidateEmpty("candidateEmpty");
@@ -392,6 +481,7 @@ cameraButton.addEventListener("click", async () => {
 sessionButton.addEventListener("click", async () => {
   const formData = new FormData();
   appendFiles(formData, "reference_images", realtimeReferenceInput.files);
+  appendFiles(formData, "reference_images", capturedReferenceFiles.realtime);
   formData.append("mode", getRealtimeMode());
   formData.append("character_id", realtimeCharacterInput.value);
 
@@ -454,6 +544,7 @@ function buildVideoJobRequest() {
   formData.append("mode", getVideoMode());
   formData.append("character_id", characterInput.value);
   appendFiles(formData, "reference_images", referenceInput.files);
+  appendFiles(formData, "reference_images", capturedReferenceFiles.video);
 
   if (candidateAnalysisId) {
     formData.append("analysis_id", candidateAnalysisId);
@@ -759,25 +850,56 @@ function bindFileName(input, label, placeholderKey) {
 
 function updateFileName(input, label, placeholderKey) {
   const files = Array.from(input.files || []);
-  if (files.length === 0) {
+  const scope = scopeForReferenceInput(input);
+  const capturedCount = scope ? capturedReferenceFiles[scope].length : 0;
+  const totalCount = files.length + capturedCount;
+  if (totalCount === 0) {
     label.textContent = t(placeholderKey);
-  } else if (files.length === 1) {
+  } else if (files.length === 1 && capturedCount === 0) {
     label.textContent = files[0].name;
   } else {
-    label.textContent = t("filesSelected").replace("{count}", String(files.length));
+    label.textContent = t("filesSelected").replace("{count}", String(totalCount));
   }
-  input.closest(".file-control").classList.toggle("has-file", files.length > 0);
-  syncReferenceGuideCount(input, files.length);
+  input.closest(".file-control").classList.toggle("has-file", totalCount > 0);
+  if (scope) {
+    syncReferenceGuideCount(scope, totalCount);
+    renderCapturedReferences(scope);
+  }
 }
 
-function syncReferenceGuideCount(input, count) {
-  const scope =
-    input === referenceInput
-      ? "video"
-      : input === realtimeReferenceInput
-        ? "realtime"
-        : null;
-  const target = scope ? referenceCountEls[scope] : null;
+function scopeForReferenceInput(input) {
+  if (input === referenceInput) {
+    return "video";
+  }
+  if (input === realtimeReferenceInput) {
+    return "realtime";
+  }
+  return null;
+}
+
+function referenceInputForScope(scope) {
+  return scope === "video" ? referenceInput : realtimeReferenceInput;
+}
+
+function referenceLabelForScope(scope) {
+  return scope === "video" ? referenceFileNameEl : realtimeReferenceFileNameEl;
+}
+
+function referencePlaceholderForScope(scope) {
+  return scope === "video" ? "imagePlaceholder" : "optionalImagePlaceholder";
+}
+
+function getReferenceCount(scope) {
+  const input = referenceInputForScope(scope);
+  return Array.from(input.files || []).length + capturedReferenceFiles[scope].length;
+}
+
+function updateReferenceState(scope) {
+  updateFileName(referenceInputForScope(scope), referenceLabelForScope(scope), referencePlaceholderForScope(scope));
+}
+
+function syncReferenceGuideCount(scope, count) {
+  const target = referenceCountEls[scope];
   if (!target) {
     return;
   }
@@ -808,6 +930,186 @@ function setGuideStepState(element, stepNumber, count) {
   const next = count < 5 && stepNumber === count + 1;
   element.classList.toggle("is-complete", complete);
   element.classList.toggle("is-next", next);
+}
+
+function renderCapturedReferences(scope) {
+  const strip = captureStripEls[scope];
+  if (!strip) {
+    return;
+  }
+  capturedReferenceUrls[scope].forEach((url) => URL.revokeObjectURL(url));
+  capturedReferenceUrls[scope] = [];
+  strip.replaceChildren();
+  capturedReferenceFiles[scope].forEach((file, index) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "reference-thumb";
+
+    const image = document.createElement("img");
+    const url = URL.createObjectURL(file);
+    capturedReferenceUrls[scope].push(url);
+    image.src = url;
+    image.alt = "";
+
+    const label = document.createElement("span");
+    label.textContent = t("capturedLabel").replace("{number}", String(index + 1));
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = t("removeCapturedReference");
+    removeButton.setAttribute("aria-label", `${t("removeCapturedReference")} ${index + 1}`);
+    removeButton.addEventListener("click", () => removeCapturedReference(scope, index));
+
+    wrapper.append(image, removeButton, label);
+    strip.append(wrapper);
+  });
+  const hasCapturedReferences = capturedReferenceFiles[scope].length > 0;
+  strip.classList.toggle("hidden", !hasCapturedReferences);
+  captureClearButtons.forEach((button) => {
+    if (button.dataset.captureClear === scope) {
+      button.classList.toggle("hidden", !hasCapturedReferences);
+    }
+  });
+}
+
+function removeCapturedReference(scope, index) {
+  capturedReferenceFiles[scope].splice(index, 1);
+  updateReferenceState(scope);
+  updateCaptureModal();
+}
+
+function clearCapturedReferences(scope) {
+  if (!scope) {
+    return;
+  }
+  capturedReferenceFiles[scope] = [];
+  updateReferenceState(scope);
+  setCaptureMessage(t("captureInitialMessage"));
+  updateCaptureModal();
+}
+
+async function openReferenceCapture(scope) {
+  if (!["video", "realtime"].includes(scope)) {
+    return;
+  }
+  activeCaptureScope = scope;
+  captureModal.classList.remove("hidden");
+  setCaptureMessage(t("captureCameraStarting"));
+  updateCaptureModal();
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setCaptureMessage(t("captureNotSupported"), true);
+    updateCaptureModal();
+    return;
+  }
+
+  stopReferenceCaptureStream();
+  try {
+    referenceCaptureStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 960, height: 720, facingMode: "user" },
+      audio: false,
+    });
+    referenceCaptureVideo.srcObject = referenceCaptureStream;
+    await referenceCaptureVideo.play();
+    setCaptureMessage(t("captureInitialMessage"));
+  } catch (error) {
+    referenceCaptureStream = null;
+    referenceCaptureVideo.removeAttribute("src");
+    setCaptureMessage(`${t("captureCameraFailed")}: ${error.message}`, true);
+  } finally {
+    updateCaptureModal();
+  }
+}
+
+function closeReferenceCapture() {
+  stopReferenceCaptureStream();
+  activeCaptureScope = null;
+  captureModal.classList.add("hidden");
+}
+
+function stopReferenceCaptureStream() {
+  if (!referenceCaptureStream) {
+    return;
+  }
+  referenceCaptureStream.getTracks().forEach((track) => track.stop());
+  referenceCaptureStream = null;
+  referenceCaptureVideo.srcObject = null;
+}
+
+async function captureReferencePhoto() {
+  const scope = activeCaptureScope;
+  if (!scope || !referenceCaptureStream) {
+    return;
+  }
+  const currentCount = getReferenceCount(scope);
+  if (currentCount >= CAPTURE_STEPS.length) {
+    setCaptureMessage(t("captureDone"));
+    updateCaptureModal();
+    return;
+  }
+
+  const step = CAPTURE_STEPS[currentCount];
+  const width = referenceCaptureVideo.videoWidth || 960;
+  const height = referenceCaptureVideo.videoHeight || 720;
+  if (!width || !height) {
+    setCaptureMessage(t("frameCaptureFailed"), true);
+    return;
+  }
+
+  const maxWidth = 960;
+  const scale = Math.min(1, maxWidth / width);
+  try {
+    captureShotButton.disabled = true;
+    referenceCaptureCanvas.width = Math.max(1, Math.round(width * scale));
+    referenceCaptureCanvas.height = Math.max(1, Math.round(height * scale));
+    const context = referenceCaptureCanvas.getContext("2d");
+    context.drawImage(referenceCaptureVideo, 0, 0, referenceCaptureCanvas.width, referenceCaptureCanvas.height);
+    const blob = await canvasToBlob(referenceCaptureCanvas);
+    const file = new File([blob], `deepdetect-reference-${scope}-${step.slug}.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+    capturedReferenceFiles[scope].push(file);
+    updateReferenceState(scope);
+    setCaptureMessage(t("captureSaved").replace("{angle}", t(step.key)));
+  } catch (error) {
+    setCaptureMessage(error.message, true);
+  } finally {
+    updateCaptureModal();
+  }
+}
+
+function updateCaptureModal() {
+  const scope = activeCaptureScope;
+  if (!scope) {
+    return;
+  }
+  const count = getReferenceCount(scope);
+  const normalizedCount = Math.max(0, Math.min(CAPTURE_STEPS.length, count));
+  const nextStepIndex = Math.min(normalizedCount, CAPTURE_STEPS.length - 1);
+  const nextStep = CAPTURE_STEPS[nextStepIndex];
+
+  captureProgressEl.textContent =
+    count >= CAPTURE_STEPS.length
+      ? t("referenceGuideReady").replace("{count}", String(count))
+      : t("referenceGuideCount").replace("{count}", String(count));
+  captureProgressEl.classList.toggle("is-ready", count >= CAPTURE_STEPS.length);
+  captureStepTitle.textContent = t(nextStep.key);
+  captureShotButton.textContent =
+    count >= CAPTURE_STEPS.length ? t("captureCompleteButton") : t("captureButton").replace("{angle}", t(nextStep.key));
+  captureShotButton.disabled = !referenceCaptureStream || count >= CAPTURE_STEPS.length;
+  captureResetButton.disabled = capturedReferenceFiles[scope].length === 0;
+  if (count >= CAPTURE_STEPS.length) {
+    setCaptureMessage(t("captureDone"));
+  }
+
+  captureModal.querySelectorAll("[data-capture-step]").forEach((step) => {
+    setGuideStepState(step, Number(step.dataset.captureStep), normalizedCount);
+  });
+}
+
+function setCaptureMessage(message, isError = false) {
+  captureMessage.textContent = message;
+  captureMessage.classList.toggle("error", Boolean(isError));
 }
 
 function getVideoMode() {
@@ -892,6 +1194,9 @@ function applyLanguage(lang) {
     jobStatusEl.textContent = t("statusIdle");
     jobStatusEl.dataset.status = "idle";
   }
+  renderCapturedReferences("video");
+  renderCapturedReferences("realtime");
+  updateCaptureModal();
 }
 
 function applyTheme(theme) {

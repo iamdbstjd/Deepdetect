@@ -656,6 +656,78 @@ h2 {
   align-items: stretch;
 }
 
+.reference-capture-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.reference-capture-button,
+.reference-clear-button,
+.compact-button {
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.reference-clear-button {
+  color: var(--muted);
+}
+
+.reference-capture-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reference-capture-strip.hidden {
+  display: none;
+}
+
+.reference-thumb {
+  position: relative;
+  overflow: hidden;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--control);
+}
+
+.reference-thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.reference-thumb span,
+.reference-thumb button {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.reference-thumb span {
+  bottom: 6px;
+  background: rgba(7, 13, 19, 0.72);
+  color: #ffffff;
+}
+
+.reference-thumb button {
+  top: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(7, 13, 19, 0.68);
+  color: #ffffff;
+  cursor: pointer;
+}
+
 .face-guide-stage {
   position: relative;
   overflow: hidden;
@@ -1152,6 +1224,11 @@ h2 {
   opacity: 0.68;
 }
 
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .workflow-steps {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1539,11 +1616,140 @@ h2 {
   margin-top: 2px;
 }
 
+.capture-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 20, 25, 0.62);
+}
+
+.capture-modal.hidden {
+  display: none;
+}
+
+.capture-dialog {
+  display: grid;
+  gap: 16px;
+  width: min(860px, 100%);
+  max-height: min(92vh, 820px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.capture-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.capture-dialog-header h2 {
+  font-size: 22px;
+}
+
+.capture-dialog-header p:not(.eyebrow) {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.capture-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.72fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.capture-preview {
+  position: relative;
+  overflow: hidden;
+  min-height: 330px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(53, 201, 184, 0.16), transparent 38%),
+    var(--media-bg);
+}
+
+.capture-preview video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 330px;
+  object-fit: cover;
+}
+
+.capture-face-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.capture-face-overlay span {
+  display: block;
+  width: min(34vw, 190px);
+  height: min(44vw, 250px);
+  max-width: 52%;
+  max-height: 72%;
+  border: 3px solid rgba(53, 201, 184, 0.92);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 999px rgba(7, 13, 19, 0.16),
+    0 0 0 8px rgba(53, 201, 184, 0.12),
+    0 0 28px rgba(53, 201, 184, 0.24);
+}
+
+.capture-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.capture-panel .reference-count {
+  justify-self: start;
+}
+
+.capture-panel strong {
+  color: var(--text-strong);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.capture-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.capture-angle-grid {
+  margin-top: 4px;
+}
+
+.capture-action-row {
+  margin-top: 0;
+}
+
 @media (max-width: 980px) {
   .console-header,
   .video-console,
   .live-console,
-  .realtime-preview-grid {
+  .realtime-preview-grid,
+  .capture-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1612,6 +1818,30 @@ h2 {
 
   .angle-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reference-capture-actions,
+  .reference-capture-strip,
+  .capture-dialog-header {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-capture-actions,
+  .capture-dialog-header {
+    display: grid;
+  }
+
+  .reference-capture-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .capture-dialog {
+    padding: 16px;
+  }
+
+  .capture-preview,
+  .capture-preview video {
+    min-height: 260px;
   }
 
   .file-control {

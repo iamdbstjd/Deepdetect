@@ -21,6 +21,7 @@ Korean light video review console:
 - Upload a video and detect face candidates before rendering.
 - Select one or more people to allow; everyone else stays blurred.
 - Upload multiple manual allow-list face images when candidate detection is not enough.
+- Capture allow-list reference photos from the laptop camera or upload existing images.
 - Guide operators to add front, 45-degree, and profile reference faces for harder angles.
 - Keep an already matched reference track visible even when a later side angle scores lower.
 - Keep saved-video work and realtime preview in separate product surfaces.
