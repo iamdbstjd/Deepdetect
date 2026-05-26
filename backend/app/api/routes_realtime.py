@@ -5,7 +5,9 @@ from pathlib import Path
 import shutil
 import uuid
 
+import cv2
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, WebSocket
+import numpy as np
 
 from backend.app.api.routes_jobs import _store_reference_uploads
 from backend.app.core.config import Settings
@@ -15,6 +17,7 @@ from backend.app.schemas.processing import parse_processing_mode
 from backend.app.services.realtime_processor import RealtimeFrameError, RealtimeFrameProcessor
 from backend.app.services.realtime_service import RealtimeSessionService
 from backend.app.vision.face_identity import FaceIdentityError
+from backend.app.vision.head_pose import FacePoseError, HaarFacePoseEstimator
 
 
 def build_realtime_router(
@@ -23,6 +26,10 @@ def build_realtime_router(
     settings: Settings,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/realtime", tags=["realtime"])
+    try:
+        pose_estimator = HaarFacePoseEstimator()
+    except FacePoseError:
+        pose_estimator = None
 
     @router.post("/sessions")
     async def create_session(
@@ -167,6 +174,19 @@ def build_realtime_router(
                 for candidate in result.candidates
             ],
         }
+
+    @router.post("/face-pose")
+    async def estimate_face_pose(frame: UploadFile = File(...)) -> dict[str, object]:
+        if pose_estimator is None:
+            raise HTTPException(status_code=503, detail="face pose estimator is unavailable")
+        data = await _read_realtime_frame(frame, settings)
+        decoded = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if decoded is None or decoded.size == 0:
+            raise HTTPException(status_code=400, detail="invalid image frame")
+        try:
+            return pose_estimator.estimate(decoded).to_public_dict()
+        except FacePoseError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return router
 

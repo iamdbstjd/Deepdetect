@@ -22,7 +22,7 @@ deepdetect는 공개 전 영상을 검토하고 익명화하는 웹 작업 공�
 - 허용할 인물을 여러 명 선택하고 나머지 얼굴은 블러 처리
 - 후보 감지가 부족할 때 수동 허용 얼굴 이미지 여러 장 업로드
 - 노트북 카메라 촬영 또는 기존 이미지 업로드로 허용 얼굴 참조 사진 추가
-- 정면, 좌우 45도, 좌우 측면 참조 얼굴 업로드 가이드 제공
+- 정면, 좌우 45도, 좌우 측면 참조 얼굴 촬영 시 카메라 방향 판정 후 캡처 허용
 - 한 번 허용 인물로 매칭된 track은 이후 옆모습 점수가 낮아져도 원본 유지
 - 저장 영상 작업과 실시간 미리보기를 분리된 서비스 화면으로 제공
 - YOLO 기반 얼굴/번호판 감지
@@ -228,6 +228,7 @@ python tools/measure_blur_quality.py
 | `POST` | `/api/jobs/{job_id}/cancel` | 작업 취소 |
 | `GET` | `/api/jobs/{job_id}/result` | 결과 영상 다운로드 |
 | `POST` | `/api/realtime/sessions` | 수동 허용 얼굴을 포함한 실시간 처리 세션 생성 |
+| `POST` | `/api/realtime/face-pose` | 참조 얼굴 촬영용 대략적인 얼굴 방향 판정 |
 | `POST` | `/api/realtime/frame-meta` | 카메라 프레임 처리와 후보 팝업 데이터 반환 |
 | `POST` | `/api/realtime/frame` | 카메라 프레임 1장 처리 |
 | `POST` | `/api/realtime/sessions/{session_id}/allow-face` | 실시간 후보 얼굴을 허용 목록에 추가 |
@@ -242,7 +243,7 @@ node --check frontend/src/app.js
 
 현재 검증 상태:
 
-- 백엔드 테스트 42개 통과
+- 백엔드 테스트 49개 통과
 - 프론트엔드 문법 검사 통과
 - Playwright로 데스크톱/모바일 UI 렌더링 확인
 - 샘플 영상 기준 blur 결과를 시각 자료와 선명도 감소율로 확인

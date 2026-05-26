@@ -1723,6 +1723,34 @@ h2 {
   justify-self: start;
 }
 
+.capture-pose-status {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--control);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.capture-pose-status.is-ready {
+  border-color: rgba(12, 124, 114, 0.7);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.capture-pose-status.is-error {
+  border-color: rgba(180, 35, 24, 0.5);
+  background: rgba(180, 35, 24, 0.08);
+  color: var(--danger);
+}
+
 .capture-panel strong {
   color: var(--text-strong);
   font-size: 18px;

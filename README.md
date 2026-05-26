@@ -22,7 +22,7 @@ Korean light video review console:
 - Select one or more people to allow; everyone else stays blurred.
 - Upload multiple manual allow-list face images when candidate detection is not enough.
 - Capture allow-list reference photos from the laptop camera or upload existing images.
-- Guide operators to add front, 45-degree, and profile reference faces for harder angles.
+- Guide operators to add front, 45-degree, and profile reference faces, with camera pose checks before capture.
 - Keep an already matched reference track visible even when a later side angle scores lower.
 - Keep saved-video work and realtime preview in separate product surfaces.
 - Detect faces and license plates using YOLO model wrappers.
@@ -228,6 +228,7 @@ python tools/measure_blur_quality.py
 | `POST` | `/api/jobs/{job_id}/cancel` | Cancel a job |
 | `GET` | `/api/jobs/{job_id}/result` | Download processed video |
 | `POST` | `/api/realtime/sessions` | Create realtime processing session with optional allow-list references |
+| `POST` | `/api/realtime/face-pose` | Estimate coarse face direction for guided reference capture |
 | `POST` | `/api/realtime/frame-meta` | Process one camera frame and return prompt candidates |
 | `POST` | `/api/realtime/frame` | Process one camera frame |
 | `POST` | `/api/realtime/sessions/{session_id}/allow-face` | Add a prompted realtime face to the allow list |
@@ -242,7 +243,7 @@ node --check frontend/src/app.js
 
 Current verification:
 
-- Backend tests: 42 passing.
+- Backend tests: 49 passing.
 - Frontend syntax check: passing.
 - Browser rendering checked with Playwright for desktop and mobile.
 - Blur sample QA checked visually and with sharpness metrics.

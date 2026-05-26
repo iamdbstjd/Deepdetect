@@ -108,6 +108,28 @@ class ApiRealtimeTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 413)
 
+    def test_face_pose_endpoint_returns_estimate(self) -> None:
+        with TestClient(self.main.app) as client:
+            response = client.post(
+                "/api/realtime/face-pose",
+                files={"frame": ("frame.jpg", self._image_bytes(), "image/jpeg")},
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertIn("detected", payload)
+        self.assertIn("pose", payload)
+        self.assertIn("confidence", payload)
+
+    def test_face_pose_endpoint_rejects_invalid_frame(self) -> None:
+        with TestClient(self.main.app) as client:
+            response = client.post(
+                "/api/realtime/face-pose",
+                files={"frame": ("frame.jpg", b"not an image", "image/jpeg")},
+            )
+
+        self.assertEqual(response.status_code, 400)
+
     def _image_bytes(self) -> bytes:
         path = Path(self.tmp.name) / "image.jpg"
         image = np.zeros((64, 64, 3), dtype=np.uint8)

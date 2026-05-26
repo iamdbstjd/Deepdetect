@@ -62,6 +62,7 @@ const captureShotButton = document.querySelector("#capture-shot-button");
 const referenceCaptureVideo = document.querySelector("#reference-capture-video");
 const referenceCaptureCanvas = document.querySelector("#reference-capture-canvas");
 const captureProgressEl = document.querySelector("#capture-progress");
+const capturePoseStatus = document.querySelector("#capture-pose-status");
 const captureStepTitle = document.querySelector("#capture-step-title");
 const captureMessage = document.querySelector("#capture-message");
 const langButtons = Array.from(document.querySelectorAll(".lang-button"));
@@ -86,6 +87,9 @@ let selectedCandidateIds = new Set();
 let pendingRealtimeCandidate = null;
 let activeCaptureScope = null;
 let referenceCaptureStream = null;
+let capturePoseTimer = null;
+let capturePoseBusy = false;
+let latestCapturePose = null;
 const capturedReferenceFiles = {
   video: [],
   realtime: [],
@@ -96,11 +100,11 @@ const capturedReferenceUrls = {
 };
 const promptedRealtimeCandidateIds = new Set();
 const CAPTURE_STEPS = [
-  { key: "angleFront", slug: "front" },
-  { key: "angleLeft45", slug: "left-45" },
-  { key: "angleRight45", slug: "right-45" },
-  { key: "angleLeftProfile", slug: "left-profile" },
-  { key: "angleRightProfile", slug: "right-profile" },
+  { key: "angleFront", slug: "front", pose: "front", promptKey: "poseNeedFront" },
+  { key: "angleLeft45", slug: "left-45", pose: "left_45", promptKey: "poseNeedLeft45" },
+  { key: "angleRight45", slug: "right-45", pose: "right_45", promptKey: "poseNeedRight45" },
+  { key: "angleLeftProfile", slug: "left-profile", pose: "left_profile", promptKey: "poseNeedLeftProfile" },
+  { key: "angleRightProfile", slug: "right-profile", pose: "right_profile", promptKey: "poseNeedRightProfile" },
 ];
 
 const TRANSLATIONS = {
@@ -233,6 +237,16 @@ const TRANSLATIONS = {
     captureSaved: "{angle} 촬영 완료",
     capturedLabel: "촬영 {number}",
     removeCapturedReference: "삭제",
+    poseWaiting: "얼굴 방향 확인 중",
+    poseChecking: "얼굴 방향 분석 중",
+    poseNoFace: "얼굴을 프레임 안에 맞추세요",
+    poseGood: "좋습니다. 촬영하세요",
+    poseNeedFront: "정면을 바라보세요",
+    poseNeedLeft45: "얼굴을 왼쪽 45도로 돌리세요",
+    poseNeedRight45: "얼굴을 오른쪽 45도로 돌리세요",
+    poseNeedLeftProfile: "왼쪽 측면이 보이게 돌리세요",
+    poseNeedRightProfile: "오른쪽 측면이 보이게 돌리세요",
+    poseEstimateFailed: "얼굴 방향 분석 실패",
     statusIdle: "대기 중",
     statusQueued: "대기열",
     statusProcessing: "처리 중",
@@ -369,6 +383,16 @@ const TRANSLATIONS = {
     captureSaved: "Captured {angle}",
     capturedLabel: "Shot {number}",
     removeCapturedReference: "Remove",
+    poseWaiting: "Checking face direction",
+    poseChecking: "Analyzing face direction",
+    poseNoFace: "Place your face inside the frame",
+    poseGood: "Good. Capture now",
+    poseNeedFront: "Face forward",
+    poseNeedLeft45: "Turn your face left 45 degrees",
+    poseNeedRight45: "Turn your face right 45 degrees",
+    poseNeedLeftProfile: "Show the left profile",
+    poseNeedRightProfile: "Show the right profile",
+    poseEstimateFailed: "Face direction analysis failed",
     statusIdle: "Idle",
     statusQueued: "Queued",
     statusProcessing: "Processing",
@@ -1011,9 +1035,11 @@ async function openReferenceCapture(scope) {
     referenceCaptureVideo.srcObject = referenceCaptureStream;
     await referenceCaptureVideo.play();
     setCaptureMessage(t("captureInitialMessage"));
+    startCapturePoseLoop();
   } catch (error) {
     referenceCaptureStream = null;
     referenceCaptureVideo.removeAttribute("src");
+    stopCapturePoseLoop();
     setCaptureMessage(`${t("captureCameraFailed")}: ${error.message}`, true);
   } finally {
     updateCaptureModal();
@@ -1027,12 +1053,72 @@ function closeReferenceCapture() {
 }
 
 function stopReferenceCaptureStream() {
+  stopCapturePoseLoop();
   if (!referenceCaptureStream) {
     return;
   }
   referenceCaptureStream.getTracks().forEach((track) => track.stop());
   referenceCaptureStream = null;
   referenceCaptureVideo.srcObject = null;
+}
+
+function startCapturePoseLoop() {
+  stopCapturePoseLoop();
+  latestCapturePose = null;
+  setCapturePoseStatus(t("poseChecking"), "waiting");
+  capturePoseTimer = window.setInterval(requestCapturePoseEstimate, 550);
+  requestCapturePoseEstimate();
+}
+
+function stopCapturePoseLoop() {
+  if (capturePoseTimer) {
+    window.clearInterval(capturePoseTimer);
+    capturePoseTimer = null;
+  }
+  capturePoseBusy = false;
+  latestCapturePose = null;
+}
+
+async function requestCapturePoseEstimate() {
+  if (!activeCaptureScope || !referenceCaptureStream || capturePoseBusy) {
+    return;
+  }
+  if (!referenceCaptureVideo.videoWidth || !referenceCaptureVideo.videoHeight) {
+    return;
+  }
+
+  capturePoseBusy = true;
+  try {
+    const canvas = document.createElement("canvas");
+    const maxWidth = 480;
+    const scale = Math.min(1, maxWidth / referenceCaptureVideo.videoWidth);
+    canvas.width = Math.max(1, Math.round(referenceCaptureVideo.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(referenceCaptureVideo.videoHeight * scale));
+    const context = canvas.getContext("2d");
+    context.drawImage(referenceCaptureVideo, 0, 0, canvas.width, canvas.height);
+    const blob = await canvasToBlob(canvas);
+
+    const formData = new FormData();
+    formData.append("frame", blob, "pose.jpg");
+    const response = await fetch("/api/realtime/face-pose", {
+      method: "POST",
+      body: formData,
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.detail || t("poseEstimateFailed"));
+    }
+    latestCapturePose = payload;
+  } catch (error) {
+    latestCapturePose = {
+      detected: false,
+      pose: "error",
+      error: error.message,
+    };
+  } finally {
+    capturePoseBusy = false;
+    updateCaptureModal();
+  }
 }
 
 async function captureReferencePhoto() {
@@ -1048,6 +1134,11 @@ async function captureReferencePhoto() {
   }
 
   const step = CAPTURE_STEPS[currentCount];
+  if (!isCapturePoseAccepted(step)) {
+    setCaptureMessage(capturePoseGuidance(step), true);
+    updateCaptureModal();
+    return;
+  }
   const width = referenceCaptureVideo.videoWidth || 960;
   const height = referenceCaptureVideo.videoHeight || 720;
   if (!width || !height) {
@@ -1096,11 +1187,13 @@ function updateCaptureModal() {
   captureStepTitle.textContent = t(nextStep.key);
   captureShotButton.textContent =
     count >= CAPTURE_STEPS.length ? t("captureCompleteButton") : t("captureButton").replace("{angle}", t(nextStep.key));
-  captureShotButton.disabled = !referenceCaptureStream || count >= CAPTURE_STEPS.length;
+  const poseAccepted = isCapturePoseAccepted(nextStep);
+  captureShotButton.disabled = !referenceCaptureStream || count >= CAPTURE_STEPS.length || !poseAccepted;
   captureResetButton.disabled = capturedReferenceFiles[scope].length === 0;
   if (count >= CAPTURE_STEPS.length) {
     setCaptureMessage(t("captureDone"));
   }
+  updateCapturePoseStatus(nextStep, poseAccepted, count >= CAPTURE_STEPS.length);
 
   captureModal.querySelectorAll("[data-capture-step]").forEach((step) => {
     setGuideStepState(step, Number(step.dataset.captureStep), normalizedCount);
@@ -1110,6 +1203,48 @@ function updateCaptureModal() {
 function setCaptureMessage(message, isError = false) {
   captureMessage.textContent = message;
   captureMessage.classList.toggle("error", Boolean(isError));
+}
+
+function isCapturePoseAccepted(step) {
+  if (!latestCapturePose || !latestCapturePose.detected) {
+    return false;
+  }
+  return latestCapturePose.pose === step.pose;
+}
+
+function capturePoseGuidance(step) {
+  if (!referenceCaptureStream) {
+    return t("captureCameraStarting");
+  }
+  if (!latestCapturePose) {
+    return t("poseChecking");
+  }
+  if (latestCapturePose.pose === "error") {
+    return `${t("poseEstimateFailed")}: ${latestCapturePose.error || ""}`.trim();
+  }
+  if (!latestCapturePose.detected || latestCapturePose.pose === "no_face") {
+    return t("poseNoFace");
+  }
+  return t(step.promptKey);
+}
+
+function updateCapturePoseStatus(step, accepted, complete) {
+  if (complete) {
+    setCapturePoseStatus(t("captureDone"), "ready");
+    return;
+  }
+  if (accepted) {
+    setCapturePoseStatus(t("poseGood"), "ready");
+    return;
+  }
+  const status = latestCapturePose && latestCapturePose.pose === "error" ? "error" : "waiting";
+  setCapturePoseStatus(capturePoseGuidance(step), status);
+}
+
+function setCapturePoseStatus(message, status) {
+  capturePoseStatus.textContent = message;
+  capturePoseStatus.classList.toggle("is-ready", status === "ready");
+  capturePoseStatus.classList.toggle("is-error", status === "error");
 }
 
 function getVideoMode() {
