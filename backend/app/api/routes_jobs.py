@@ -25,6 +25,7 @@ from backend.app.services.job_service import (
 from backend.app.services.candidate_service import extract_video_face_candidates
 from backend.app.services.queue_service import SimpleJobQueue
 from backend.app.vision.detections import RegionDetector
+from backend.app.vision.face_identity import FaceIdentityMatcher
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_-]+$")
@@ -35,6 +36,7 @@ def build_jobs_router(
     job_queue: SimpleJobQueue,
     settings: Settings,
     detector: RegionDetector,
+    face_matcher: FaceIdentityMatcher | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/jobs", tags=["jobs"])
 
@@ -82,7 +84,12 @@ def build_jobs_router(
             analysis_dir.mkdir(parents=True, exist_ok=True)
             video_path = await _store_upload(video, analysis_dir, "video", settings)
             candidate_dir = analysis_dir / "faces"
-            candidates = extract_video_face_candidates(video_path, detector, candidate_dir)
+            candidates = extract_video_face_candidates(
+                video_path,
+                detector,
+                candidate_dir,
+                face_matcher=face_matcher,
+            )
             return {
                 "analysis_id": analysis_id,
                 "candidates": [

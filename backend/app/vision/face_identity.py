@@ -27,6 +27,9 @@ class FaceIdentityMatcher(Protocol):
     def prepare(self, reference_image_path: Path) -> PreparedFaceMatcher:
         ...
 
+    def prepare_image(self, reference_image: np.ndarray) -> PreparedFaceMatcher:
+        ...
+
 
 class DisabledPreparedMatcher:
     def match_score(self, frame: np.ndarray, detection: Detection) -> float:
@@ -38,6 +41,9 @@ class DisabledPreparedMatcher:
 
 class DisabledFaceMatcher:
     def prepare(self, reference_image_path: Path) -> PreparedFaceMatcher:
+        return DisabledPreparedMatcher()
+
+    def prepare_image(self, reference_image: np.ndarray) -> PreparedFaceMatcher:
         return DisabledPreparedMatcher()
 
 
@@ -81,7 +87,12 @@ class HistogramFaceMatcher:
         if reference is None or reference.size == 0:
             raise FaceIdentityError(f"cannot read reference image: {reference_image_path}")
         reference = _reference_face_crop(reference, self.reference_detector)
-        return HistogramPreparedMatcher(_hsv_histogram(reference), self.threshold)
+        return self.prepare_image(reference)
+
+    def prepare_image(self, reference_image: np.ndarray) -> PreparedFaceMatcher:
+        if reference_image.size == 0:
+            raise FaceIdentityError("empty reference image")
+        return HistogramPreparedMatcher(_hsv_histogram(reference_image), self.threshold)
 
 
 class ArcFacePreparedMatcher:
@@ -136,8 +147,13 @@ class ArcFaceMatcher:
         if reference is None or reference.size == 0:
             raise FaceIdentityError(f"cannot read reference image: {reference_image_path}")
         reference = _reference_face_crop(reference, self.reference_detector)
+        return self.prepare_image(reference)
+
+    def prepare_image(self, reference_image: np.ndarray) -> PreparedFaceMatcher:
+        if reference_image.size == 0:
+            raise FaceIdentityError("empty reference image")
         with self._lock:
-            reference_embedding = _arcface_embedding(self.net, reference)
+            reference_embedding = _arcface_embedding(self.net, reference_image)
         return ArcFacePreparedMatcher(
             reference_embedding=reference_embedding,
             net=self.net,
