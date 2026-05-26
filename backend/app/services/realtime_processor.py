@@ -50,6 +50,7 @@ class RealtimeRuntime:
     character_image: np.ndarray | None
     tracker: DetectionTracker | None
     unknown_prompt_seconds: float = 10.0
+    reference_track_ids: set[int] = field(default_factory=set)
     unknown_tracks: dict[int, _UnknownFaceTrack] = field(default_factory=dict)
     pending_faces: dict[str, bytes] = field(default_factory=dict)
     lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
@@ -120,7 +121,7 @@ class RealtimeFrameProcessor:
         with runtime.lock:
             visible_unknown_track_ids: set[int] = set()
             for detection in detections:
-                if detection.kind == "face" and detection.observed:
+                if detection.kind == "face":
                     is_reference = self._is_reference(frame, detection, runtime)
                     if is_reference:
                         if detection.track_id is not None:
@@ -130,6 +131,7 @@ class RealtimeFrameProcessor:
                         if (
                             runtime.mode == "character"
                             and runtime.character_image is not None
+                            and detection.observed
                         ):
                             overlays.append(
                                 OverlayInstruction(
@@ -138,7 +140,9 @@ class RealtimeFrameProcessor:
                                 )
                             )
                             continue
-                    elif detection.track_id is not None:
+                        if runtime.mode == "character":
+                            continue
+                    elif detection.observed and detection.track_id is not None:
                         visible_unknown_track_ids.add(detection.track_id)
                         candidate = self._maybe_prompt_candidate(
                             frame,
@@ -173,9 +177,10 @@ class RealtimeFrameProcessor:
             reference_image_path.parent.mkdir(parents=True, exist_ok=True)
             reference_image_path.write_bytes(image_bytes)
             runtime.prepared_matchers.append(self.face_matcher.prepare(reference_image_path))
-            for track in runtime.unknown_tracks.values():
+            for track_id, track in runtime.unknown_tracks.items():
                 if track.candidate_id == candidate_id:
                     track.prompted = True
+                    runtime.reference_track_ids.add(track_id)
             return True
 
     def _decode(self, data: bytes) -> np.ndarray:
@@ -222,7 +227,18 @@ class RealtimeFrameProcessor:
         detection,
         runtime: RealtimeRuntime,
     ) -> bool:
-        return any(matcher.is_match(frame, detection) for matcher in runtime.prepared_matchers)
+        track_id = detection.track_id
+        if track_id is not None and track_id in runtime.reference_track_ids:
+            return True
+        if not detection.observed:
+            return False
+        is_reference = any(
+            matcher.is_match(frame, detection)
+            for matcher in runtime.prepared_matchers
+        )
+        if is_reference and track_id is not None:
+            runtime.reference_track_ids.add(track_id)
+        return is_reference
 
     def _maybe_prompt_candidate(
         self,

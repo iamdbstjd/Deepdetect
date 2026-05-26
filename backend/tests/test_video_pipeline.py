@@ -25,6 +25,30 @@ class SequenceDetector:
         return detections
 
 
+class SequencePreparedMatcher:
+    def __init__(self, responses: list[bool]):
+        self.responses = responses
+        self.index = 0
+
+    def match_score(self, _frame, _detection) -> float:
+        return 1.0 if self.is_match(_frame, _detection) else 0.0
+
+    def is_match(self, _frame, _detection) -> bool:
+        if self.index >= len(self.responses):
+            return False
+        response = self.responses[self.index]
+        self.index += 1
+        return response
+
+
+class SequenceFaceMatcher:
+    def __init__(self, responses: list[bool]):
+        self.responses = responses
+
+    def prepare(self, _reference_image_path: Path) -> SequencePreparedMatcher:
+        return SequencePreparedMatcher(self.responses)
+
+
 class BlurVideoPipelineTests(unittest.TestCase):
     def test_processes_video_and_writes_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -161,6 +185,34 @@ class BlurVideoPipelineTests(unittest.TestCase):
 
             self.assertEqual(stats["reference_faces"], 2)
             self.assertEqual(stats["preserved_faces"], 8)
+
+    def test_keeps_reference_track_when_later_angle_does_not_match(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            input_path = root / "input.mp4"
+            output_path = root / "output.mp4"
+            reference_path = root / "reference.jpg"
+            self._write_video(input_path)
+            cv2.imwrite(str(reference_path), self._solid_image((255, 255, 255)))
+            pipeline = BlurVideoPipeline(
+                detector=StaticDetector([Detection("face", 0, 0, 64, 64, 1.0)]),
+                renderer=PrivacyRenderer(face_padding=0.0),
+                face_matcher=SequenceFaceMatcher([True, False, False, False]),
+                tracker=DetectionTracker(iou_threshold=0.1, smoothing_alpha=1.0, max_missing=1),
+            )
+
+            stats = pipeline.process_video(
+                input_path,
+                output_path,
+                reference_image_path=reference_path,
+                mode="preserve",
+                character_id=None,
+                on_progress=lambda _value, _message: None,
+                is_cancelled=lambda: False,
+            )
+
+            self.assertEqual(stats["preserved_faces"], 4)
+            self.assertEqual(stats["reference_tracks"], 1)
 
     def test_character_mode_overlays_matching_reference_face(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

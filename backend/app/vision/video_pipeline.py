@@ -85,6 +85,7 @@ class BlurVideoPipeline:
             reference_image_path,
             reference_image_paths,
         )
+        reference_track_ids: set[int] = set()
         character_image = None
         if mode == "character" and self.character_store:
             character_image = self.character_store.load(character_id)
@@ -100,19 +101,25 @@ class BlurVideoPipeline:
                 render_detections = []
                 overlays: list[OverlayInstruction] = []
                 for detection in detections:
-                    if detection.kind == "face" and prepared_matchers and detection.observed:
-                        is_reference = any(
-                            matcher.is_match(frame, detection)
-                            for matcher in prepared_matchers
+                    if detection.kind == "face" and prepared_matchers:
+                        is_reference = self._is_reference_detection(
+                            frame,
+                            detection,
+                            prepared_matchers,
+                            reference_track_ids,
                         )
                         if mode == "preserve" and is_reference:
                             preserved_faces += 1
                             continue
-                        if mode == "character" and is_reference and character_image is not None:
-                            overlaid_faces += 1
-                            overlays.append(
-                                OverlayInstruction(detection=detection, image=character_image)
-                            )
+                        if mode == "character" and is_reference:
+                            if character_image is not None and detection.observed:
+                                overlaid_faces += 1
+                                overlays.append(
+                                    OverlayInstruction(
+                                        detection=detection,
+                                        image=character_image,
+                                    )
+                                )
                             continue
                     render_detections.append(detection)
                 total_detections += len(raw_detections)
@@ -139,6 +146,7 @@ class BlurVideoPipeline:
             "preserved_faces": preserved_faces,
             "overlaid_faces": overlaid_faces,
             "reference_faces": len(prepared_matchers),
+            "reference_tracks": len(reference_track_ids),
             "width": width,
             "height": height,
         }
@@ -167,3 +175,20 @@ class BlurVideoPipeline:
             seen.add(normalized)
             unique_paths.append(path)
         return [self.face_matcher.prepare(path) for path in unique_paths]
+
+    @staticmethod
+    def _is_reference_detection(
+        frame,
+        detection,
+        prepared_matchers: list[PreparedFaceMatcher],
+        reference_track_ids: set[int],
+    ) -> bool:
+        track_id = detection.track_id
+        if track_id is not None and track_id in reference_track_ids:
+            return True
+        if not detection.observed:
+            return False
+        is_reference = any(matcher.is_match(frame, detection) for matcher in prepared_matchers)
+        if is_reference and track_id is not None:
+            reference_track_ids.add(track_id)
+        return is_reference

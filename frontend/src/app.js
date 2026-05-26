@@ -7,6 +7,10 @@ const realtimeReferenceInput = document.querySelector("#realtime-reference-input
 const videoFileNameEl = document.querySelector("#video-file-name");
 const referenceFileNameEl = document.querySelector("#reference-file-name");
 const realtimeReferenceFileNameEl = document.querySelector("#realtime-reference-file-name");
+const referenceCountEls = {
+  video: document.querySelector('[data-reference-count="video"]'),
+  realtime: document.querySelector('[data-reference-count="realtime"]'),
+};
 const candidateGrid = document.querySelector("#candidate-grid");
 const modeInputs = Array.from(document.querySelectorAll('input[name="mode"]'));
 const realtimeModeInputs = Array.from(document.querySelectorAll('input[name="realtime_mode"]'));
@@ -90,8 +94,17 @@ const TRANSLATIONS = {
     videoPlaceholder: "MP4, MOV, AVI, MKV",
     referenceFace: "추가 허용 얼굴",
     realtimeReferenceFace: "처음부터 허용할 얼굴",
-    imagePlaceholder: "JPG, PNG, WEBP 여러 장",
-    optionalImagePlaceholder: "선택 사항",
+    imagePlaceholder: "정면, 좌우 45도, 좌우 측면 5장 권장",
+    optionalImagePlaceholder: "선택 사항, 5장 권장",
+    referenceGuideTitle: "다각도 허용 얼굴",
+    referenceGuideCopy: "정면과 좌우 각도를 함께 넣으면 옆모습에서 블러될 가능성이 줄어듭니다.",
+    referenceGuideCount: "{count} / 5",
+    referenceGuideReady: "{count}장 준비됨",
+    angleFront: "정면",
+    angleLeft45: "왼쪽 45도",
+    angleRight45: "오른쪽 45도",
+    angleLeftProfile: "왼쪽 측면",
+    angleRightProfile: "오른쪽 측면",
     choose: "선택",
     candidateTitle: "영상 속 인물 후보",
     candidateCopy: "영상을 먼저 분석한 뒤, 블러에서 제외할 인물만 선택하세요.",
@@ -198,8 +211,17 @@ const TRANSLATIONS = {
     videoPlaceholder: "MP4, MOV, AVI, MKV",
     referenceFace: "Additional allowed faces",
     realtimeReferenceFace: "Initially allowed faces",
-    imagePlaceholder: "JPG, PNG, WEBP files",
-    optionalImagePlaceholder: "Optional",
+    imagePlaceholder: "Front, 45-degree, and profile shots recommended",
+    optionalImagePlaceholder: "Optional, 5 shots recommended",
+    referenceGuideTitle: "Multi-angle allowed face",
+    referenceGuideCopy: "Add front and side angles to reduce false blur when the person turns.",
+    referenceGuideCount: "{count} / 5",
+    referenceGuideReady: "{count} ready",
+    angleFront: "Front",
+    angleLeft45: "Left 45",
+    angleRight45: "Right 45",
+    angleLeftProfile: "Left profile",
+    angleRightProfile: "Right profile",
     choose: "Choose",
     candidateTitle: "People detected in the video",
     candidateCopy: "Analyze the video first, then select only the people to exclude from blur.",
@@ -737,6 +759,23 @@ function updateFileName(input, label, placeholderKey) {
     label.textContent = `${files.length} files`;
   }
   input.closest(".file-control").classList.toggle("has-file", files.length > 0);
+  syncReferenceGuideCount(input, files.length);
+}
+
+function syncReferenceGuideCount(input, count) {
+  const target =
+    input === referenceInput
+      ? referenceCountEls.video
+      : input === realtimeReferenceInput
+        ? referenceCountEls.realtime
+        : null;
+  if (!target) {
+    return;
+  }
+  const key = count >= 5 ? "referenceGuideReady" : "referenceGuideCount";
+  target.dataset.i18n = key;
+  target.textContent = t(key).replace("{count}", String(count));
+  target.classList.toggle("is-ready", count >= 5);
 }
 
 function getVideoMode() {
