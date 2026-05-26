@@ -12,9 +12,9 @@ deepdetect는 공개 전 영상을 검토하고 익명화하는 웹 작업 공�
 
 ![deepdetect 라이트 UI](samples/reports/ui_ko.png)
 
-영어 다크 영상 검토 콘솔:
+한국어 얼굴 방향 판정 촬영 화면:
 
-![deepdetect 다크 UI](samples/reports/ui_en.png)
+![deepdetect 얼굴 방향 판정 촬영 UI](samples/reports/ui_capture_ko.png)
 
 ## 주요 기능
 
@@ -33,6 +33,20 @@ deepdetect는 공개 전 영상을 검토하고 익명화하는 웹 작업 공�
 - 결과 영상 다운로드
 - 웹 UI KR/ENG 전환
 - 해/달 토글 기반 라이트/다크 테마 전환
+
+## 얼굴 등록 촬영 흐름
+
+허용 인물 참조 사진은 기존 이미지 업로드와 노트북 카메라 촬영을 모두 지원합니다. 촬영 모달을 열면 브라우저가 카메라 프레임을 `/api/realtime/face-pose`로 보내고, 백엔드는 대략적인 얼굴 방향을 판정합니다. 현재 단계와 감지된 방향이 맞을 때만 촬영 버튼이 활성화됩니다.
+
+촬영 순서:
+
+1. 정면
+2. 왼쪽 45도
+3. 오른쪽 45도
+4. 왼쪽 측면
+5. 오른쪽 측면
+
+이 방향 판정은 더 좋은 참조 사진을 얻기 위한 사용성 가이드입니다. 보안 인증 수준의 생체 등록 기능은 아닙니다.
 
 ## 샘플 검증 결과
 
@@ -63,6 +77,7 @@ flowchart TD
     WebUI --> CandidateAPI[Candidate Analysis API]
     WebUI --> JobsAPI[FastAPI Jobs API]
     WebUI --> RealtimeAPI[FastAPI Realtime API]
+    WebUI --> PoseAPI[Face Pose API<br/>참조 얼굴 촬영 가이드]
 
     CandidateAPI --> CandidateService[Candidate Service<br/>프레임 샘플링, 얼굴 후보 crop]
     CandidateService --> TempStorage[(Temp Candidate Storage)]
@@ -75,6 +90,7 @@ flowchart TD
     RealtimeSession --> FrameProcessor[Realtime Frame Processor]
     FrameProcessor --> VisionCore[공유 Vision Core]
     Pipeline --> VisionCore
+    PoseAPI --> PoseEstimator[OpenCV 얼굴 방향 추정<br/>정면, 45도, 측면]
 
     VisionCore --> Detector[YOLO Region Detector<br/>얼굴과 번호판]
     VisionCore --> Matcher[ArcFace Matcher<br/>허용 얼굴 판별]
@@ -255,6 +271,7 @@ node --check frontend/src/app.js
 - 실시간 허용 팝업은 tracker 기반이므로 의도한 동작을 위해 tracker를 켜두는 것이 좋습니다.
 - 번호판 처리 품질은 선택한 번호판 YOLO 모델과 대상 지역/영상 품질에 영향을 받습니다.
 - 참조 인물 판별은 시연/서비스 품질 목적이며 보안 인증 수준의 얼굴 인증이 아닙니다.
+- 카메라 방향 판정은 2D 웹캠 기반의 대략적인 추정이므로 조명, 카메라 각도, 얼굴 크기에 영향을 받습니다.
 - Apple 이모지 asset은 포함하지 않습니다. 기본 이모지는 자체 생성한 스마일 스타일 asset입니다.
 
 ## Roadmap

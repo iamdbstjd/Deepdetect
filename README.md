@@ -12,9 +12,9 @@ English dark video review console:
 
 ![deepdetect dark UI](samples/reports/ui_en.png)
 
-Korean light video review console:
+English guided face capture with pose check:
 
-![deepdetect light UI](samples/reports/ui_ko.png)
+![deepdetect guided face capture UI](samples/reports/ui_capture_en.png)
 
 ## Features
 
@@ -33,6 +33,20 @@ Korean light video review console:
 - Download the processed result video.
 - Switch the web UI between KR and ENG.
 - Toggle the product UI between light and dark themes.
+
+## Guided Face Capture
+
+The allow-list reference flow supports both image upload and laptop-camera capture. When the operator opens the capture dialog, the browser sends sampled camera frames to `/api/realtime/face-pose`. The backend returns a coarse face direction estimate, and the capture button stays disabled until the detected direction matches the current step.
+
+Capture sequence:
+
+1. Front
+2. Left 45
+3. Right 45
+4. Left profile
+5. Right profile
+
+The pose check is a usability guard for better reference images. It is not a security-grade biometric enrollment system.
 
 ## Demo Evidence
 
@@ -63,6 +77,7 @@ flowchart TD
     WebUI --> CandidateAPI[Candidate Analysis API]
     WebUI --> JobsAPI[FastAPI Jobs API]
     WebUI --> RealtimeAPI[FastAPI Realtime API]
+    WebUI --> PoseAPI[Face Pose API<br/>guided reference capture]
 
     CandidateAPI --> CandidateService[Candidate Service<br/>sample frames, crop face candidates]
     CandidateService --> TempStorage[(Temp Candidate Storage)]
@@ -75,6 +90,7 @@ flowchart TD
     RealtimeSession --> FrameProcessor[Realtime Frame Processor]
     FrameProcessor --> VisionCore[Shared Vision Core]
     Pipeline --> VisionCore
+    PoseAPI --> PoseEstimator[OpenCV Face Pose Estimator<br/>front, 45-degree, profile]
 
     VisionCore --> Detector[YOLO Region Detector<br/>faces and plates]
     VisionCore --> Matcher[ArcFace Matcher<br/>allowed-face identity]
@@ -255,6 +271,7 @@ Current verification:
 - Realtime allow prompts depend on tracking; keep the tracker enabled for the intended prompt behavior.
 - License plate quality depends on the selected plate YOLO model and target region.
 - Reference-person matching is pragmatic, not a security-grade identity system.
+- Camera pose checks use coarse 2D webcam estimation, so lighting, camera angle, and face size affect guidance quality.
 - Apple emoji assets are not bundled; the default emoji is a custom generated smile asset.
 
 ## Roadmap
