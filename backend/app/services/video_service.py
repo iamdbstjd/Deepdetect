@@ -76,6 +76,7 @@ class VideoJobProcessor:
                 character_id=record.character_id,
                 on_progress=on_progress,
                 is_cancelled=is_cancelled,
+                emoji_image_path=Path(record.emoji_image_path) if record.emoji_image_path else None,
             )
         except VideoPipelineCancelled as exc:
             result_path.unlink(missing_ok=True)

@@ -19,6 +19,14 @@ class CharacterAssetStore:
                 return _ensure_bgra(image)
         return self._default_emoji()
 
+    def load_from_path(self, path: Path) -> np.ndarray:
+        """업로드된 이모지 파일 경로에서 직접 로드."""
+        if path.exists():
+            image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+            if image is not None and image.size:
+                return _ensure_bgra(image)
+        return self._default_emoji()
+
     def _asset_path(self, character_id: str) -> Path:
         safe_id = re.sub(r"[^A-Za-z0-9_-]+", "_", character_id).strip("_")
         safe_id = safe_id or "default_emoji"

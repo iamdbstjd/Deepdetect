@@ -48,6 +48,7 @@ class BlurVideoPipeline:
         character_id: str | None,
         on_progress: ProgressCallback,
         is_cancelled: CancelledCallback,
+        emoji_image_path: Path | None = None,
     ) -> dict[str, int]:
         capture = cv2.VideoCapture(str(input_path))
         if not capture.isOpened():
@@ -85,7 +86,10 @@ class BlurVideoPipeline:
             prepared_matcher = self.face_matcher.prepare(reference_image_path)
         character_image = None
         if mode == "character" and self.character_store:
-            character_image = self.character_store.load(character_id)
+            if emoji_image_path:
+                character_image = self.character_store.load_from_path(emoji_image_path)
+            else:
+                character_image = self.character_store.load(character_id)
         try:
             while True:
                 if is_cancelled():

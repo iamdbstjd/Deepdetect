@@ -8,222 +8,231 @@
   </head>
   <body>
     <div class="app-shell">
-      <header class="topbar" aria-label="서비스 헤더">
-        <a class="brand" href="/" aria-label="deepdetect 홈">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>
-            <strong>deepdetect</strong>
-            <small data-i18n="brandSubtitle">영상 익명화</small>
-          </span>
-        </a>
-        <div class="topbar-actions">
-          <div class="language-toggle" role="group" aria-label="Language">
-            <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
-            <button class="lang-button" type="button" data-lang="en">ENG</button>
-          </div>
-          <div class="service-status">
-            <span class="status-dot" aria-hidden="true"></span>
-            <span data-i18n="serviceReady">AI 처리 준비됨</span>
-          </div>
-        </div>
-      </header>
-
-      <main>
-        <section class="hero-section" aria-labelledby="hero-title">
-          <div class="hero-copy">
-            <p class="eyebrow" data-i18n="heroEyebrow">영상 개인정보 보호</p>
-            <h1 id="hero-title" data-i18n="heroTitle">공유 가능한 영상으로 안전하게 변환하세요</h1>
-            <p class="hero-lede" data-i18n="heroLede">
-              얼굴과 번호판을 감지하고, 참조 인물은 유지하거나 스마일 이모지로 대체합니다.
-            </p>
-            <div class="hero-metrics" aria-label="sample quality metrics">
-              <div>
-                <strong>5</strong>
-                <span data-i18n="metricDetection">샘플 얼굴 감지</span>
-              </div>
-              <div>
-                <strong>4</strong>
-                <span data-i18n="metricBlur">평균 선명도 감소</span>
-              </div>
-              <div>
-                <strong>1</strong>
-                <span data-i18n="metricLanguage">언어 전환</span>
-              </div>
+ 
+      <!-- ════ PAGE: HOME ════ -->
+      <div class="page active" id="page-home">
+        <header class="topbar">
+          <a class="brand" href="/" aria-label="deepdetect 홈">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span><strong>deepdetect</strong><small data-i18n="brandSubtitle">영상 익명화</small></span>
+          </a>
+          <div class="topbar-actions">
+            <div class="language-toggle" role="group" aria-label="Language">
+              <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
+              <button class="lang-button" type="button" data-lang="en">ENG</button>
+            </div>
+            <div class="service-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span data-i18n="serviceReady">AI 처리 준비됨</span>
             </div>
           </div>
-
-          <div class="showcase-panel" aria-label="처리 예시">
+        </header>
+ 
+        <section class="hero-section" aria-labelledby="hero-title">
+          <div class="hero-copy panel">
+            <p class="eyebrow" data-i18n="heroEyebrow">영상 개인정보 보호</p>
+            <h1 id="hero-title" data-i18n="heroTitle">공유 가능한 영상으로 안전하게 변환하세요</h1>
+            <p class="hero-lede" data-i18n="heroLede">얼굴과 번호판을 감지하고, 참조 인물은 유지하거나 스마일 이모지로 대체합니다.</p>
+            <div class="hero-metrics" aria-label="sample quality metrics">
+              <div><strong>5</strong><span data-i18n="metricDetection">샘플 얼굴 감지</span></div>
+              <div><strong>4</strong><span data-i18n="metricBlur">평균 선명도 감소</span></div>
+              <div><strong>1</strong><span data-i18n="metricLanguage">언어 전환</span></div>
+            </div>
+          </div>
+ 
+          <div class="showcase-panel panel" aria-label="처리 예시">
             <div class="showcase-main">
-              <img id="showcase-image" src="/assets/showcase_blur.jpg" alt="deepdetect YOLO-style blur sample" />
+              <img id="showcase-image" src="/assets/showcase_blur.jpg" alt="deepdetect sample result" />
               <div class="showcase-overlay">
                 <span data-i18n="showcaseBadge">실제 샘플 결과</span>
                 <strong id="showcase-title" data-i18n="showcaseBlurTitle">얼굴 블러 처리</strong>
               </div>
             </div>
             <div class="showcase-strip">
-              <button
-                class="showcase-card is-active"
-                type="button"
+              <button class="showcase-card is-active" type="button"
                 data-showcase="/assets/showcase_blur.jpg"
-                data-showcase-title-key="showcaseBlurTitle"
-                aria-pressed="true"
-              >
+                data-showcase-title-key="showcaseBlurTitle" aria-pressed="true">
                 <img src="/assets/showcase_blur.jpg" alt="" />
                 <span data-i18n="showcaseBlur">Blur</span>
               </button>
-              <button
-                class="showcase-card"
-                type="button"
+              <button class="showcase-card" type="button"
                 data-showcase="/assets/showcase_preserve.jpg"
-                data-showcase-title-key="showcasePreserveTitle"
-                aria-pressed="false"
-              >
+                data-showcase-title-key="showcasePreserveTitle" aria-pressed="false">
                 <img src="/assets/showcase_preserve.jpg" alt="" />
                 <span data-i18n="showcasePreserve">Preserve</span>
               </button>
-              <button
-                class="showcase-card"
-                type="button"
+              <button class="showcase-card" type="button"
                 data-showcase="/assets/showcase_character.jpg"
-                data-showcase-title-key="showcaseEmojiTitle"
-                aria-pressed="false"
-              >
+                data-showcase-title-key="showcaseEmojiTitle" aria-pressed="false">
                 <img src="/assets/showcase_character.jpg" alt="" />
                 <span data-i18n="showcaseEmoji">Emoji</span>
               </button>
             </div>
           </div>
         </section>
-
-        <section class="workspace">
-          <section class="work-panel work-panel-primary" aria-labelledby="upload-title">
-          <div class="section-header">
-            <div>
-              <p class="eyebrow" data-i18n="savedVideo">저장 영상</p>
-              <h1 id="upload-title" data-i18n="uploadTitle">영상 익명화 작업</h1>
+ 
+        <!-- 기능 카드 — 페이지 이동 -->
+        <div class="feature-cards">
+          <div class="feature-card" role="button" tabindex="0"
+            onclick="goPage('video')" onkeydown="if(event.key==='Enter')goPage('video')">
+            <div class="feature-icon feature-icon--teal" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
             </div>
-            <span class="surface-badge" data-i18n="highQuality">고품질 처리</span>
-          </div>
-
-          <form id="upload-form" class="job-form">
-            <div class="file-grid">
-              <label class="file-control" for="video-input">
-                <input id="video-input" name="video" type="file" accept="video/*" required />
-                <span class="file-copy">
-                  <strong data-i18n="videoFile">처리할 영상</strong>
-                  <small id="video-file-name" data-placeholder-key="videoPlaceholder"
-                    >MP4, MOV, AVI, MKV</small
-                  >
-                </span>
-                <span class="file-action" data-i18n="choose">선택</span>
-              </label>
-
-              <label class="file-control" for="reference-input">
-                <input
-                  id="reference-input"
-                  name="reference_image"
-                  type="file"
-                  accept="image/*"
-                  required
-                />
-                <span class="file-copy">
-                  <strong data-i18n="referenceFace">유지할 얼굴</strong>
-                  <small id="reference-file-name" data-placeholder-key="imagePlaceholder"
-                    >JPG, PNG, WEBP</small
-                  >
-                </span>
-                <span class="file-action" data-i18n="choose">선택</span>
-              </label>
-            </div>
-
-            <fieldset class="mode-group">
-              <legend data-i18n="modeLegend">처리 방식</legend>
-              <label class="mode-option">
-                <input type="radio" name="mode" value="preserve" checked />
-                <span>
-                  <strong data-i18n="preserveMode">원본 유지</strong>
-                  <small data-i18n="preserveModeHint">참조 인물만 그대로 유지</small>
-                </span>
-              </label>
-              <label class="mode-option">
-                <input type="radio" name="mode" value="character" />
-                <span>
-                  <strong data-i18n="characterMode">이모지 대체</strong>
-                  <small data-i18n="characterModeHint">참조 인물 얼굴에 스마일 이모지 적용</small>
-                </span>
-              </label>
-            </fieldset>
-
-            <label id="character-field" class="select-field is-muted" aria-disabled="true">
-              <span data-i18n="characterPreset">이모지 프리셋</span>
-              <select id="character-input" name="character_id" disabled>
-                <option value="default_emoji" data-i18n="smileEmoji">스마일 이모지</option>
-              </select>
-            </label>
-
-            <div class="mode-preview" aria-live="polite">
-              <span class="mode-preview-icon" aria-hidden="true"></span>
-              <div>
-                <strong id="selected-mode-title" data-i18n="selectedPreserveTitle">참조 인물 원본 유지</strong>
-                <p id="selected-mode-copy" data-i18n="selectedPreserveCopy">
-                  참조 사진과 일치한 인물만 원본으로 유지하고 나머지는 블러 처리합니다.
-                </p>
-              </div>
-            </div>
-
-            <button id="submit-button" class="primary-button" type="submit" data-i18n="startProcess">
-              처리 시작
-            </button>
-          </form>
-
-          <div class="workflow-steps" aria-label="processing steps">
-            <div class="workflow-step is-active" data-step="upload">
-              <span>1</span>
-              <strong data-i18n="stepUpload">업로드</strong>
-            </div>
-            <div class="workflow-step" data-step="detect">
-              <span>2</span>
-              <strong data-i18n="stepDetect">감지</strong>
-            </div>
-            <div class="workflow-step" data-step="render">
-              <span>3</span>
-              <strong data-i18n="stepRender">렌더링</strong>
-            </div>
-            <div class="workflow-step" data-step="export">
-              <span>4</span>
-              <strong data-i18n="stepExport">완료</strong>
+            <div class="feature-body">
+              <h3 data-i18n="featVideoTitle">영상 처리</h3>
+              <p data-i18n="featVideoDesc">MP4, MOV 등 영상 파일을 업로드하면 YOLO가 얼굴과 번호판을 감지하고 자동으로 블러 처리합니다. 참조 이미지 등록 시 해당 인물만 원본 유지 가능합니다.</p>
+              <span class="feature-go" data-i18n="featGo">시작하기 →</span>
             </div>
           </div>
-
-          <div class="job-summary" aria-live="polite">
-            <div class="summary-grid">
-              <div>
-                <span class="meta-label" data-i18n="jobNumber">작업 번호</span>
-                <strong id="job-id">-</strong>
-              </div>
-              <div>
-                <span class="meta-label" data-i18n="status">상태</span>
-                <strong id="job-status" data-status="idle">대기 중</strong>
-              </div>
-              <div>
-                <span class="meta-label" data-i18n="progress">진행률</span>
-                <strong id="job-progress">0%</strong>
-              </div>
+          <div class="feature-card" role="button" tabindex="0"
+            onclick="goPage('realtime')" onkeydown="if(event.key==='Enter')goPage('realtime')">
+            <div class="feature-icon feature-icon--blue" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
             </div>
-            <div class="progress-track" aria-hidden="true">
-              <span id="job-progress-bar"></span>
+            <div class="feature-body">
+              <h3 data-i18n="featRtTitle">실시간 스트리밍 처리</h3>
+              <p data-i18n="featRtDesc">브라우저 카메라를 켜면 WebSocket으로 실시간 블러/이모지 처리 결과를 즉시 확인할 수 있습니다. 세션 생성 후 바로 시작 가능합니다.</p>
+              <span class="feature-go feature-go--blue" data-i18n="featGo">시작하기 →</span>
             </div>
-            <p id="job-message" class="message-line" data-i18n="initialJobMessage">
-              영상과 참조 얼굴을 선택하면 처리를 시작할 수 있습니다.
-            </p>
-            <a id="download-link" class="download-button hidden" href="#" data-i18n="downloadResult"
-              >결과 영상 받기</a
-            >
           </div>
-        </section>
-
+        </div>
+      </div>
+ 
+      <!-- ════ PAGE: 영상 처리 ════ -->
+      <div class="page" id="page-video">
+        <header class="topbar">
+          <a class="brand" onclick="goPage('home')" role="button" tabindex="0" aria-label="홈으로">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span><strong>deepdetect</strong><small data-i18n="brandSubtitle">영상 익명화</small></span>
+          </a>
+          <div class="topbar-actions">
+            <div class="language-toggle" role="group" aria-label="Language">
+              <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
+              <button class="lang-button" type="button" data-lang="en">ENG</button>
+            </div>
+            <div class="service-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span data-i18n="serviceReady">AI 처리 준비됨</span>
+            </div>
+          </div>
+        </header>
+        <button class="back-button" type="button" onclick="goPage('home')">← <span data-i18n="backHome">홈으로</span></button>
+ 
+        <section class="workspace" aria-labelledby="upload-title">
+          <!-- 왼쪽: 업로드 + 설정 -->
+          <section class="work-panel work-panel-primary panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow" data-i18n="savedVideo">저장 영상</p>
+                <h1 id="upload-title" data-i18n="uploadTitle">영상 익명화 작업</h1>
+              </div>
+              <span class="surface-badge" data-i18n="highQuality">고품질 처리</span>
+            </div>
+ 
+            <form id="upload-form" class="job-form">
+              <!-- 파일 업로드 3개 -->
+              <div class="file-grid-3">
+                <label class="file-control" for="video-input" id="video-ctrl">
+                  <input id="video-input" name="video" type="file" accept="video/*" required />
+                  <div class="file-control-top">
+                    <div class="file-copy">
+                      <strong data-i18n="videoFile">처리할 영상</strong>
+                      <small id="video-file-name" data-placeholder-key="videoPlaceholder">MP4, MOV, AVI, MKV</small>
+                    </div>
+                    <div class="file-icon file-icon--video" aria-hidden="true">🎬</div>
+                  </div>
+                  <div class="file-action-row">
+                    <span class="file-tag file-tag--required" data-i18n="required">필수</span>
+                    <span class="file-action" data-i18n="choose">선택</span>
+                  </div>
+                </label>
+ 
+                <label class="file-control" for="reference-input" id="reference-ctrl">
+                  <input id="reference-input" name="reference_image" type="file" accept="image/*" required />
+                  <div class="file-control-top">
+                    <div class="file-copy">
+                      <strong data-i18n="referenceFace">유지할 얼굴</strong>
+                      <small id="reference-file-name" data-placeholder-key="imagePlaceholder">JPG, PNG, WEBP</small>
+                    </div>
+                    <div class="file-icon file-icon--image" aria-hidden="true">🧑</div>
+                  </div>
+                  <div class="file-action-row">
+                    <span class="file-tag file-tag--required" data-i18n="required">필수</span>
+                    <span class="file-action" data-i18n="choose">선택</span>
+                  </div>
+                </label>
+ 
+                <label class="file-control file-control--disabled" for="emoji-input" id="emoji-ctrl" aria-disabled="true">
+                  <input id="emoji-input" name="emoji_image" type="file" accept="image/png" disabled />
+                  <div class="file-control-top">
+                    <div class="file-copy">
+                      <strong data-i18n="emojiFile">이모지 이미지</strong>
+                      <small id="emoji-file-name" data-placeholder-key="emojiPlaceholder">PNG (투명 배경 권장)</small>
+                    </div>
+                    <div class="file-icon file-icon--emoji" aria-hidden="true">😊</div>
+                  </div>
+                  <div class="file-action-row">
+                    <span class="file-tag file-tag--optional" data-i18n="emojiModeOnly">이모지 모드</span>
+                    <span class="file-action" data-i18n="choose">선택</span>
+                  </div>
+                </label>
+              </div>
+ 
+              <!-- 모드 선택 -->
+              <fieldset class="mode-group">
+                <legend data-i18n="modeLegend">처리 방식</legend>
+                <label class="mode-option">
+                  <input type="radio" name="mode" value="preserve" checked />
+                  <span>
+                    <strong data-i18n="preserveMode">원본 유지</strong>
+                    <small data-i18n="preserveModeHint">참조 인물만 그대로 유지</small>
+                  </span>
+                </label>
+                <label class="mode-option">
+                  <input type="radio" name="mode" value="character" />
+                  <span>
+                    <strong data-i18n="characterMode">이모지 대체</strong>
+                    <small data-i18n="characterModeHint">참조 인물 얼굴을 이모지로 교체</small>
+                  </span>
+                </label>
+              </fieldset>
+ 
+              <!-- 모드 미리보기 -->
+              <div class="mode-preview" aria-live="polite">
+                <span class="mode-preview-icon" aria-hidden="true"></span>
+                <div>
+                  <strong id="selected-mode-title" data-i18n="selectedPreserveTitle">참조 인물 원본 유지</strong>
+                  <p id="selected-mode-copy" data-i18n="selectedPreserveCopy">참조 사진과 일치한 인물만 원본으로 유지하고 나머지는 블러 처리합니다.</p>
+                </div>
+              </div>
+ 
+              <button id="submit-button" class="primary-button" type="submit" data-i18n="startProcess">처리 시작</button>
+            </form>
+ 
+            <!-- 워크플로우 -->
+            <div class="workflow-steps" aria-label="processing steps">
+              <div class="workflow-step is-active" data-step="upload"><span>1</span><strong data-i18n="stepUpload">업로드</strong></div>
+              <div class="workflow-step" data-step="detect"><span>2</span><strong data-i18n="stepDetect">감지</strong></div>
+              <div class="workflow-step" data-step="render"><span>3</span><strong data-i18n="stepRender">렌더링</strong></div>
+              <div class="workflow-step" data-step="export"><span>4</span><strong data-i18n="stepExport">완료</strong></div>
+            </div>
+ 
+            <!-- 작업 요약 -->
+            <div class="job-summary" aria-live="polite">
+              <div class="summary-grid">
+                <div><span class="meta-label" data-i18n="jobNumber">작업 번호</span><strong id="job-id">-</strong></div>
+                <div><span class="meta-label" data-i18n="status">상태</span><strong id="job-status" data-status="idle">대기 중</strong></div>
+                <div><span class="meta-label" data-i18n="progress">진행률</span><strong id="job-progress">0%</strong></div>
+              </div>
+              <div class="progress-track" aria-hidden="true"><span id="job-progress-bar"></span></div>
+              <p id="job-message" class="message-line" data-i18n="initialJobMessage">영상과 참조 얼굴을 선택하면 처리를 시작할 수 있습니다.</p>
+              <a id="download-link" class="download-button hidden" href="#" data-i18n="downloadResult">결과 영상 받기</a>
+            </div>
+          </section>
+ 
+          <!-- 오른쪽: 결과 -->
           <aside class="side-stack">
-            <section class="work-panel result-panel" aria-labelledby="result-title">
+            <section class="work-panel result-panel panel" aria-labelledby="result-title">
               <div class="section-header compact">
                 <div>
                   <p class="eyebrow" data-i18n="resultEyebrow">결과</p>
@@ -238,57 +247,146 @@
                   <span data-i18n="resultEmptyCopy">처리가 완료되면 다운로드와 미리보기가 활성화됩니다.</span>
                 </div>
               </div>
-              <a id="result-open-link" class="secondary-link hidden" href="#" target="_blank" rel="noreferrer" data-i18n="openResult">
-                새 탭에서 열기
-              </a>
-            </section>
-
-            <section class="work-panel realtime-panel" aria-labelledby="realtime-title">
-              <div class="section-header compact">
-                <div>
-                  <p class="eyebrow" data-i18n="realtime">실시간</p>
-                  <h2 id="realtime-title" data-i18n="realtimeTitle">실시간 미리보기</h2>
-                </div>
-                <span class="surface-badge" data-i18n="browserCamera">브라우저 카메라</span>
-              </div>
-
-              <div class="preview-grid">
-                <figure class="media-frame">
-                  <video id="camera-video" autoplay muted playsinline></video>
-                  <div class="media-placeholder">
-                    <strong data-i18n="cameraPlaceholderTitle">카메라 대기 중</strong>
-                    <span data-i18n="cameraPlaceholderCopy">권한을 허용하면 원본 화면이 표시됩니다.</span>
-                  </div>
-                  <figcaption data-i18n="camera">카메라</figcaption>
-                </figure>
-                <figure class="media-frame">
-                  <canvas id="camera-canvas"></canvas>
-                  <div class="media-placeholder">
-                    <strong data-i18n="processedPlaceholderTitle">처리 결과 대기 중</strong>
-                    <span data-i18n="processedPlaceholderCopy">세션 생성 후 블러/이모지 결과가 표시됩니다.</span>
-                  </div>
-                  <figcaption data-i18n="processedPreview">처리 결과</figcaption>
-                </figure>
-              </div>
-
-              <div class="action-row">
-                <button id="session-button" class="secondary-button" type="button" data-i18n="createSession">
-                  세션 생성
-                </button>
-                <button id="camera-button" class="primary-button" type="button" data-i18n="startCamera">
-                  카메라 시작
-                </button>
-              </div>
-
-              <p id="realtime-message" class="notice-line" data-i18n="initialRealtimeMessage">
-                참조 얼굴을 선택한 뒤 세션을 만들면 실시간 처리를 볼 수 있습니다.
-              </p>
+              <a id="result-open-link" class="secondary-link hidden" href="#" target="_blank" rel="noreferrer" data-i18n="openResult">새 탭에서 열기</a>
             </section>
           </aside>
         </section>
-      </main>
-    </div>
-
+      </div>
+ 
+      <!-- ════ PAGE: 실시간 스트리밍 ════ -->
+      <div class="page" id="page-realtime">
+        <header class="topbar">
+          <a class="brand" onclick="goPage('home')" role="button" tabindex="0" aria-label="홈으로">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span><strong>deepdetect</strong><small data-i18n="brandSubtitle">영상 익명화</small></span>
+          </a>
+          <div class="topbar-actions">
+            <div class="language-toggle" role="group" aria-label="Language">
+              <button class="lang-button is-active" type="button" data-lang="ko">KR</button>
+              <button class="lang-button" type="button" data-lang="en">ENG</button>
+            </div>
+            <div class="service-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span data-i18n="serviceReady">AI 처리 준비됨</span>
+            </div>
+          </div>
+        </header>
+        <button class="back-button" type="button" onclick="goPage('home')">← <span data-i18n="backHome">홈으로</span></button>
+ 
+        <section class="realtime-layout">
+          <!-- 왼쪽: 카메라 화면 -->
+          <section class="work-panel realtime-panel panel" aria-labelledby="realtime-title">
+            <div class="section-header compact">
+              <div>
+                <p class="eyebrow" data-i18n="realtime">실시간</p>
+                <h1 id="realtime-title" data-i18n="realtimeTitle">실시간 스트리밍 처리</h1>
+              </div>
+              <span class="surface-badge" data-i18n="wsBadge">WebSocket</span>
+            </div>
+ 
+            <div class="camera-grid">
+              <figure class="media-frame">
+                <video id="camera-video" autoplay muted playsinline></video>
+                <div class="media-placeholder">
+                  <strong data-i18n="cameraPlaceholderTitle">카메라 대기 중</strong>
+                  <span data-i18n="cameraPlaceholderCopy">카메라 시작을 누르면 원본 화면이 표시됩니다.</span>
+                </div>
+                <figcaption data-i18n="camera">원본 카메라</figcaption>
+              </figure>
+              <figure class="media-frame">
+                <canvas id="camera-canvas"></canvas>
+                <div class="media-placeholder">
+                  <strong data-i18n="processedPlaceholderTitle">처리 결과 대기 중</strong>
+                  <span data-i18n="processedPlaceholderCopy">세션 생성 후 블러/이모지 결과가 표시됩니다.</span>
+                </div>
+                <figcaption data-i18n="processedPreview">AI 처리 결과</figcaption>
+              </figure>
+            </div>
+ 
+            <div class="camera-actions">
+              <button id="session-button" class="secondary-button" type="button" data-i18n="createSession">세션 생성</button>
+              <button id="camera-button" class="primary-button" type="button" data-i18n="startCamera">카메라 시작</button>
+            </div>
+            <p id="realtime-message" class="notice-line" data-i18n="initialRealtimeMessage">참조 얼굴을 선택한 뒤 세션을 만들면 실시간 처리를 볼 수 있습니다.</p>
+          </section>
+ 
+          <!-- 오른쪽: 세션 설정 -->
+          <aside class="realtime-side">
+            <section class="work-panel session-panel panel">
+              <div class="section-header compact">
+                <div>
+                  <p class="eyebrow" data-i18n="sessionConfig">설정</p>
+                  <h2 data-i18n="sessionTitle">세션 설정</h2>
+                </div>
+                <span class="surface-badge" id="session-status-badge" data-i18n="aiReady">AI 준비됨</span>
+              </div>
+ 
+              <!-- 참조 얼굴 업로드 -->
+              <label class="file-control rt-ref-upload" for="rt-reference-input" id="rt-reference-ctrl">
+                <input id="rt-reference-input" name="rt_reference_image" type="file" accept="image/*" />
+                <div class="file-control-top">
+                  <div class="file-copy">
+                    <strong data-i18n="referenceFace">유지할 얼굴</strong>
+                    <small id="rt-reference-file-name" data-placeholder-key="imagePlaceholder">JPG, PNG, WEBP</small>
+                  </div>
+                  <div class="file-icon file-icon--image" aria-hidden="true">🧑</div>
+                </div>
+                <div class="file-action-row">
+                  <span class="file-tag file-tag--required" data-i18n="required">필수</span>
+                  <span class="file-action" data-i18n="choose">선택</span>
+                </div>
+              </label>
+ 
+              <!-- 처리 방식 -->
+              <div class="rt-mode-section">
+                <p class="mode-legend-label" data-i18n="modeLegend">처리 방식</p>
+                <div class="mode-mini">
+                  <label class="mode-mini-option">
+                    <input type="radio" name="rt-mode" value="preserve" checked />
+                    <span data-i18n="preserveMode">원본 유지</span>
+                  </label>
+                  <label class="mode-mini-option">
+                    <input type="radio" name="rt-mode" value="character" />
+                    <span data-i18n="characterMode">이모지 대체</span>
+                  </label>
+                </div>
+              </div>
+ 
+              <!-- 이모지 업로드 (이모지 모드 시 활성) -->
+              <label class="file-control rt-emoji-upload file-control--disabled" for="rt-emoji-input" id="rt-emoji-ctrl" aria-disabled="true">
+                <input id="rt-emoji-input" name="rt_emoji_image" type="file" accept="image/png" disabled />
+                <div class="file-control-top">
+                  <div class="file-copy">
+                    <strong data-i18n="emojiFile">이모지 이미지</strong>
+                    <small id="rt-emoji-file-name" data-placeholder-key="emojiDefaultHint">PNG — 기본 스마일 이모지 사용 중</small>
+                  </div>
+                  <div class="file-icon file-icon--emoji" aria-hidden="true">😊</div>
+                </div>
+                <div class="file-action-row">
+                  <span class="file-tag file-tag--optional" data-i18n="optional">선택</span>
+                  <span class="file-action" data-i18n="change">변경</span>
+                </div>
+              </label>
+ 
+              <div class="section-divider"></div>
+ 
+              <!-- 세션 상태 -->
+              <div class="session-info" id="session-info">
+                <span class="meta-label" data-i18n="sessionStatus">세션 상태</span>
+                <strong id="session-info-label">-</strong>
+                <span class="session-id-text" id="session-info-id" data-i18n="noSession">세션 생성 버튼을 눌러주세요</span>
+              </div>
+ 
+              <!-- 세션 생성 버튼 -->
+              <button id="session-create-button" class="primary-button" type="button" data-i18n="createSession">세션 생성</button>
+            </section>
+          </aside>
+        </section>
+      </div>
+ 
+    </div><!-- /.app-shell -->
+ 
     <script src="/src/app.js" type="module"></script>
   </body>
 </html>
+ 

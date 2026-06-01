@@ -28,6 +28,7 @@ def build_realtime_router(
         reference_image: UploadFile = File(...),
         mode: str = Form("preserve"),
         character_id: str | None = Form(None),
+        emoji_image: UploadFile | None = File(None),
     ) -> dict[str, object]:
         session_dir: Path | None = None
         try:
@@ -38,10 +39,17 @@ def build_realtime_router(
             reference_path = await _store_upload(
                 reference_image, session_dir, "image", settings
             )
+            # 이모지 이미지 업로드 처리 (character 모드일 때 선택적)
+            emoji_path: Path | None = None
+            if emoji_image and emoji_image.filename:
+                emoji_path = await _store_upload(
+                    emoji_image, session_dir, "emoji", settings
+                )
             runtime = frame_processor.create_runtime(
                 reference_image_path=reference_path,
                 mode=parsed_mode.value,
                 character_id=character_id,
+                emoji_image_path=emoji_path,
             )
             session = realtime_service.create_session(
                 reference_image_path=reference_path,

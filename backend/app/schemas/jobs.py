@@ -24,6 +24,7 @@ class JobRecord:
     video_path: str
     reference_image_path: str
     result_path: str | None = None
+    emoji_image_path: str | None = None
     progress: int = 0
     message: str = ""
     error: str | None = None
@@ -65,4 +66,3 @@ class JobRecord:
     @property
     def result_file(self) -> Path | None:
         return Path(self.result_path) if self.result_path else None
-
