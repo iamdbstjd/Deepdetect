@@ -658,19 +658,21 @@ h2 {
 
 .reference-capture-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .reference-capture-button,
 .reference-clear-button,
+.reference-upload-clear-button,
 .compact-button {
   min-height: 38px;
   padding: 0 12px;
   font-size: 12px;
 }
 
-.reference-clear-button {
+.reference-clear-button,
+.reference-upload-clear-button {
   color: var(--muted);
 }
 
@@ -839,7 +841,8 @@ h2 {
 }
 
 .guide-orbit-dot.is-complete,
-.guide-orbit-dot.is-next {
+.guide-orbit-dot.is-next,
+.guide-orbit-dot.is-detected {
   border-color: rgba(120, 233, 218, 0.95);
   background: var(--accent);
   box-shadow: 0 0 0 5px rgba(53, 201, 184, 0.18);
@@ -939,6 +942,14 @@ h2 {
 .angle-grid span.is-next {
   border-color: rgba(12, 124, 114, 0.45);
   box-shadow: inset 3px 0 0 rgba(12, 124, 114, 0.55);
+}
+
+.angle-grid span.is-detected {
+  border-color: rgba(12, 124, 114, 0.75);
+  background: var(--accent-soft);
+  box-shadow:
+    0 0 0 4px var(--focus-ring),
+    inset 3px 0 0 rgba(12, 124, 114, 0.75);
 }
 
 .angle-grid span.is-complete {
@@ -1220,12 +1231,12 @@ h2 {
 }
 
 .primary-button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.68;
 }
 
 .secondary-button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.68;
 }
 
@@ -1685,6 +1696,7 @@ h2 {
   height: 100%;
   min-height: 330px;
   object-fit: cover;
+  transform: scaleX(-1);
 }
 
 .capture-face-overlay {

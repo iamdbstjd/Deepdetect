@@ -192,10 +192,10 @@
                       </div>
                       <div class="angle-grid" aria-label="권장 촬영 각도">
                         <span data-angle-step="1"><b>01</b><small data-i18n="angleFront">정면</small></span>
-                        <span data-angle-step="2"><b>02</b><small data-i18n="angleLeft45">왼쪽 45도</small></span>
-                        <span data-angle-step="3"><b>03</b><small data-i18n="angleRight45">오른쪽 45도</small></span>
-                        <span data-angle-step="4"><b>04</b><small data-i18n="angleLeftProfile">왼쪽 측면</small></span>
-                        <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
+                        <span data-angle-step="2"><b>02</b><small data-i18n="angleLeft45">한쪽 45도</small></span>
+                        <span data-angle-step="3"><b>03</b><small data-i18n="angleRight45">반대쪽 45도</small></span>
+                        <span data-angle-step="4"><b>04</b><small data-i18n="angleLeftProfile">한쪽 측면</small></span>
+                        <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">반대쪽 측면</small></span>
                       </div>
                     </div>
                     <div class="reference-capture-actions">
@@ -204,6 +204,9 @@
                       </button>
                       <button class="secondary-button reference-clear-button hidden" type="button" data-capture-clear="video" data-i18n="clearCapturedReferences">
                         촬영 사진 초기화
+                      </button>
+                      <button class="secondary-button reference-upload-clear-button hidden" type="button" data-reference-upload-clear="video" data-i18n="clearUploadedReferences">
+                        업로드 사진 초기화
                       </button>
                     </div>
                     <div class="reference-capture-strip hidden" data-capture-strip="video" aria-live="polite"></div>
@@ -382,10 +385,10 @@
                     </div>
                     <div class="angle-grid" aria-label="권장 촬영 각도">
                       <span data-angle-step="1"><b>01</b><small data-i18n="angleFront">정면</small></span>
-                      <span data-angle-step="2"><b>02</b><small data-i18n="angleLeft45">왼쪽 45도</small></span>
-                      <span data-angle-step="3"><b>03</b><small data-i18n="angleRight45">오른쪽 45도</small></span>
-                      <span data-angle-step="4"><b>04</b><small data-i18n="angleLeftProfile">왼쪽 측면</small></span>
-                      <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
+                      <span data-angle-step="2"><b>02</b><small data-i18n="angleLeft45">한쪽 45도</small></span>
+                      <span data-angle-step="3"><b>03</b><small data-i18n="angleRight45">반대쪽 45도</small></span>
+                      <span data-angle-step="4"><b>04</b><small data-i18n="angleLeftProfile">한쪽 측면</small></span>
+                      <span data-angle-step="5"><b>05</b><small data-i18n="angleRightProfile">반대쪽 측면</small></span>
                     </div>
                   </div>
                   <div class="reference-capture-actions">
@@ -394,6 +397,9 @@
                     </button>
                     <button class="secondary-button reference-clear-button hidden" type="button" data-capture-clear="realtime" data-i18n="clearCapturedReferences">
                       촬영 사진 초기화
+                    </button>
+                    <button class="secondary-button reference-upload-clear-button hidden" type="button" data-reference-upload-clear="realtime" data-i18n="clearUploadedReferences">
+                      업로드 사진 초기화
                     </button>
                   </div>
                   <div class="reference-capture-strip hidden" data-capture-strip="realtime" aria-live="polite"></div>
@@ -487,13 +493,13 @@
               <span id="capture-progress" class="reference-count">0 / 5</span>
               <span id="capture-pose-status" class="capture-pose-status" data-i18n="poseWaiting">얼굴 방향 확인 중</span>
               <strong id="capture-step-title">정면</strong>
-              <p id="capture-step-copy" data-i18n="captureStepCopy">얼굴을 프레임 중앙에 두고 현재 각도에서 촬영하세요.</p>
+              <p id="capture-step-copy" data-i18n="captureStepCopy">얼굴을 프레임 중앙에 두고 편한 방향으로 천천히 돌리세요.</p>
               <div class="angle-grid capture-angle-grid" aria-label="촬영 각도">
                 <span data-capture-step="1"><b>01</b><small data-i18n="angleFront">정면</small></span>
-                <span data-capture-step="2"><b>02</b><small data-i18n="angleLeft45">왼쪽 45도</small></span>
-                <span data-capture-step="3"><b>03</b><small data-i18n="angleRight45">오른쪽 45도</small></span>
-                <span data-capture-step="4"><b>04</b><small data-i18n="angleLeftProfile">왼쪽 측면</small></span>
-                <span data-capture-step="5"><b>05</b><small data-i18n="angleRightProfile">오른쪽 측면</small></span>
+                <span data-capture-step="2"><b>02</b><small data-i18n="angleLeft45">한쪽 45도</small></span>
+                <span data-capture-step="3"><b>03</b><small data-i18n="angleRight45">반대쪽 45도</small></span>
+                <span data-capture-step="4"><b>04</b><small data-i18n="angleLeftProfile">한쪽 측면</small></span>
+                <span data-capture-step="5"><b>05</b><small data-i18n="angleRightProfile">반대쪽 측면</small></span>
               </div>
             </div>
           </div>
@@ -507,7 +513,7 @@
               촬영 사진 초기화
             </button>
             <button id="capture-shot-button" class="primary-button" type="button">
-              정면 촬영
+              감지된 각도 저장
             </button>
           </div>
         </div>

@@ -51,6 +51,7 @@ const allowAcceptButton = document.querySelector("#allow-accept-button");
 const allowRejectButton = document.querySelector("#allow-reject-button");
 const captureOpenButtons = Array.from(document.querySelectorAll("[data-capture-open]"));
 const captureClearButtons = Array.from(document.querySelectorAll("[data-capture-clear]"));
+const referenceUploadClearButtons = Array.from(document.querySelectorAll("[data-reference-upload-clear]"));
 const captureStripEls = {
   video: document.querySelector('[data-capture-strip="video"]'),
   realtime: document.querySelector('[data-capture-strip="realtime"]'),
@@ -90,14 +91,8 @@ let referenceCaptureStream = null;
 let capturePoseTimer = null;
 let capturePoseBusy = false;
 let latestCapturePose = null;
-const capturedReferenceFiles = {
-  video: [],
-  realtime: [],
-};
-const capturedReferenceUrls = {
-  video: [],
-  realtime: [],
-};
+let lastFocusedElementBeforeCapture = null;
+let lastFocusedElementBeforeAllow = null;
 const promptedRealtimeCandidateIds = new Set();
 const CAPTURE_STEPS = [
   { key: "angleFront", slug: "front", pose: "front", promptKey: "poseNeedFront" },
@@ -106,6 +101,19 @@ const CAPTURE_STEPS = [
   { key: "angleLeftProfile", slug: "left-profile", pose: "left_profile", promptKey: "poseNeedLeftProfile" },
   { key: "angleRightProfile", slug: "right-profile", pose: "right_profile", promptKey: "poseNeedRightProfile" },
 ];
+const capturePoseCanvas = document.createElement("canvas");
+const capturedReferenceFiles = {
+  video: createCaptureSlots(),
+  realtime: createCaptureSlots(),
+};
+const capturedReferenceUrls = {
+  video: [],
+  realtime: [],
+};
+
+function createCaptureSlots() {
+  return Array(CAPTURE_STEPS.length).fill(null);
+}
 
 const TRANSLATIONS = {
   ko: {
@@ -139,16 +147,17 @@ const TRANSLATIONS = {
     filesSelected: "{count}개 파일",
     captureReference: "노트북 카메라로 촬영",
     clearCapturedReferences: "촬영 사진 초기화",
+    clearUploadedReferences: "업로드 사진 초기화",
     referenceGuideTitle: "얼굴 등록 가이드",
-    referenceGuideCopy: "정면에서 시작해 좌우로 천천히 돌린 사진 5장을 추가하세요.",
+    referenceGuideCopy: "거울 미리보기를 보면서 정면, 45도, 측면 얼굴 5장을 채우세요.",
     referenceGuideStage: "얼굴을 중앙에 맞추세요",
     referenceGuideCount: "{count} / 5",
     referenceGuideReady: "{count}장 준비됨",
     angleFront: "정면",
-    angleLeft45: "왼쪽 45도",
-    angleRight45: "오른쪽 45도",
-    angleLeftProfile: "왼쪽 측면",
-    angleRightProfile: "오른쪽 측면",
+    angleLeft45: "한쪽 45도",
+    angleRight45: "반대쪽 45도",
+    angleLeftProfile: "한쪽 측면",
+    angleRightProfile: "반대쪽 측면",
     choose: "선택",
     candidateTitle: "영상 속 인물 후보",
     candidateCopy: "영상을 먼저 분석한 뒤, 블러에서 제외할 인물만 선택하세요.",
@@ -210,6 +219,7 @@ const TRANSLATIONS = {
     cameraStartFailed: "카메라 시작 실패",
     sessionFailed: "세션 생성 실패",
     realtimeSessionReady: "실시간 세션이 준비되었습니다.",
+    realtimeSessionNeedsRefresh: "설정이 변경되었습니다. 세션을 다시 생성하세요.",
     realtimeCandidate: "실시간 후보",
     allowPersonTitle: "이 인물을 허용할까요?",
     allowPersonCopy: "허용하면 이후 프레임부터 이 얼굴은 블러 처리하지 않습니다.",
@@ -226,26 +236,27 @@ const TRANSLATIONS = {
     captureTitle: "노트북 카메라로 얼굴 등록",
     captureCopy: "각도 단계에 맞춰 한 장씩 촬영하면 업로드 사진과 함께 전송됩니다.",
     captureClose: "닫기",
-    captureStepCopy: "얼굴을 프레임 중앙에 두고 현재 각도에서 촬영하세요.",
-    captureInitialMessage: "카메라 권한을 허용한 뒤 단계별로 촬영하세요.",
+    captureStepCopy: "얼굴을 프레임 중앙에 두고 편한 방향으로 천천히 돌리세요.",
+    captureInitialMessage: "카메라 권한을 허용한 뒤 감지된 각도에 맞춰 자동으로 저장하세요.",
     captureCameraStarting: "카메라를 여는 중...",
     captureCameraFailed: "카메라를 열 수 없습니다",
     captureNotSupported: "이 브라우저는 카메라 촬영을 지원하지 않습니다.",
-    captureButton: "{angle} 촬영",
+    captureButton: "감지된 각도 저장",
     captureCompleteButton: "촬영 완료",
     captureDone: "5장 촬영이 준비되었습니다. 닫고 처리하면 업로드 사진과 함께 전송됩니다.",
-    captureSaved: "{angle} 촬영 완료",
+    captureSaved: "{angle} 저장 완료",
     capturedLabel: "촬영 {number}",
     removeCapturedReference: "삭제",
     poseWaiting: "얼굴 방향 확인 중",
     poseChecking: "얼굴 방향 분석 중",
     poseNoFace: "얼굴을 프레임 안에 맞추세요",
-    poseGood: "좋습니다. 촬영하세요",
+    poseGood: "좋습니다. 저장하세요",
     poseNeedFront: "정면을 바라보세요",
-    poseNeedLeft45: "얼굴을 왼쪽 45도로 돌리세요",
-    poseNeedRight45: "얼굴을 오른쪽 45도로 돌리세요",
-    poseNeedLeftProfile: "왼쪽 측면이 보이게 돌리세요",
-    poseNeedRightProfile: "오른쪽 측면이 보이게 돌리세요",
+    poseNeedLeft45: "얼굴을 한쪽 45도 정도로 돌리세요",
+    poseNeedRight45: "얼굴을 반대쪽 45도 정도로 돌리세요",
+    poseNeedLeftProfile: "한쪽 측면이 보이게 돌리세요",
+    poseNeedRightProfile: "반대쪽 측면이 보이게 돌리세요",
+    poseAlreadySaved: "{angle}은 이미 저장되었습니다. 다른 각도로 천천히 돌리세요.",
     poseEstimateFailed: "얼굴 방향 분석 실패",
     statusIdle: "대기 중",
     statusQueued: "대기열",
@@ -285,16 +296,17 @@ const TRANSLATIONS = {
     filesSelected: "{count} files",
     captureReference: "Use laptop camera",
     clearCapturedReferences: "Clear captured photos",
+    clearUploadedReferences: "Clear uploaded photos",
     referenceGuideTitle: "Face reference guide",
-    referenceGuideCopy: "Start facing forward, then add five photos as the face turns left and right.",
+    referenceGuideCopy: "Use the mirrored preview to fill front, 45-degree, and profile face shots.",
     referenceGuideStage: "Center the face in the frame",
     referenceGuideCount: "{count} / 5",
     referenceGuideReady: "{count} ready",
     angleFront: "Front",
-    angleLeft45: "Left 45",
-    angleRight45: "Right 45",
-    angleLeftProfile: "Left profile",
-    angleRightProfile: "Right profile",
+    angleLeft45: "One side 45",
+    angleRight45: "Other side 45",
+    angleLeftProfile: "One side profile",
+    angleRightProfile: "Other side profile",
     choose: "Choose",
     candidateTitle: "People detected in the video",
     candidateCopy: "Analyze the video first, then select only the people to exclude from blur.",
@@ -356,6 +368,7 @@ const TRANSLATIONS = {
     cameraStartFailed: "Camera start failed",
     sessionFailed: "Session creation failed",
     realtimeSessionReady: "Realtime session is ready.",
+    realtimeSessionNeedsRefresh: "Settings changed. Create a session again.",
     realtimeCandidate: "Realtime candidate",
     allowPersonTitle: "Allow this person?",
     allowPersonCopy: "If allowed, this face will stop being blurred in later frames.",
@@ -372,26 +385,27 @@ const TRANSLATIONS = {
     captureTitle: "Register a face with the laptop camera",
     captureCopy: "Capture each angle and the photos will be sent with uploaded reference images.",
     captureClose: "Close",
-    captureStepCopy: "Keep the face centered in the frame, then capture the current angle.",
-    captureInitialMessage: "Allow camera access, then capture each step.",
+    captureStepCopy: "Keep the face centered and slowly turn in either direction.",
+    captureInitialMessage: "Allow camera access, then save each automatically detected angle.",
     captureCameraStarting: "Opening camera...",
     captureCameraFailed: "Could not open the camera",
     captureNotSupported: "This browser does not support camera capture.",
-    captureButton: "Capture {angle}",
+    captureButton: "Save detected angle",
     captureCompleteButton: "Capture complete",
     captureDone: "Five captured photos are ready. Close and process to upload them with references.",
-    captureSaved: "Captured {angle}",
+    captureSaved: "Saved {angle}",
     capturedLabel: "Shot {number}",
     removeCapturedReference: "Remove",
     poseWaiting: "Checking face direction",
     poseChecking: "Analyzing face direction",
     poseNoFace: "Place your face inside the frame",
-    poseGood: "Good. Capture now",
+    poseGood: "Good. Save now",
     poseNeedFront: "Face forward",
-    poseNeedLeft45: "Turn your face left 45 degrees",
-    poseNeedRight45: "Turn your face right 45 degrees",
-    poseNeedLeftProfile: "Show the left profile",
-    poseNeedRightProfile: "Show the right profile",
+    poseNeedLeft45: "Turn your face about 45 degrees to one side",
+    poseNeedRight45: "Turn your face about 45 degrees to the other side",
+    poseNeedLeftProfile: "Show one side profile",
+    poseNeedRightProfile: "Show the other side profile",
+    poseAlreadySaved: "{angle} is already saved. Slowly turn to another angle.",
     poseEstimateFailed: "Face direction analysis failed",
     statusIdle: "Idle",
     statusQueued: "Queued",
@@ -419,7 +433,13 @@ bindFileName(referenceInput, referenceFileNameEl, "imagePlaceholder");
 bindFileName(realtimeReferenceInput, realtimeReferenceFileNameEl, "optionalImagePlaceholder");
 videoInput.addEventListener("change", resetCandidateAnalysis);
 modeInputs.forEach((input) => input.addEventListener("change", syncVideoModeState));
-realtimeModeInputs.forEach((input) => input.addEventListener("change", syncRealtimeModeState));
+realtimeModeInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    syncRealtimeModeState();
+    invalidateRealtimeSession();
+  });
+});
+realtimeCharacterInput.addEventListener("change", invalidateRealtimeSession);
 analyzeButton.addEventListener("click", analyzeCandidates);
 allowAcceptButton.addEventListener("click", allowRealtimeCandidate);
 allowRejectButton.addEventListener("click", hideAllowModal);
@@ -428,6 +448,9 @@ captureOpenButtons.forEach((button) => {
 });
 captureClearButtons.forEach((button) => {
   button.addEventListener("click", () => clearCapturedReferences(button.dataset.captureClear));
+});
+referenceUploadClearButtons.forEach((button) => {
+  button.addEventListener("click", () => clearUploadedReferences(button.dataset.referenceUploadClear));
 });
 captureCloseButton.addEventListener("click", closeReferenceCapture);
 captureResetButton.addEventListener("click", () => {
@@ -442,10 +465,25 @@ captureModal.addEventListener("click", (event) => {
   }
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !captureModal.classList.contains("hidden")) {
-    closeReferenceCapture();
+  const captureOpen = !captureModal.classList.contains("hidden");
+  const allowOpen = !allowModal.classList.contains("hidden");
+  if (captureOpen) {
+    if (event.key === "Escape") {
+      closeReferenceCapture();
+      return;
+    }
+    trapModalFocus(event, captureModal);
+    return;
+  }
+  if (allowOpen) {
+    if (event.key === "Escape") {
+      hideAllowModal();
+      return;
+    }
+    trapModalFocus(event, allowModal);
   }
 });
+setPage("video");
 syncVideoModeState();
 syncRealtimeModeState();
 renderCandidateEmpty("candidateEmpty");
@@ -588,6 +626,9 @@ function buildVideoJobRequest() {
 
 function appendFiles(formData, fieldName, files) {
   Array.from(files || []).forEach((file) => {
+    if (!file) {
+      return;
+    }
     formData.append(fieldName, file);
   });
 }
@@ -780,6 +821,23 @@ function stopRealtimeLoop() {
   realtimeBusy = false;
 }
 
+function invalidateRealtimeSession() {
+  if (!realtimeSessionId) {
+    return;
+  }
+  realtimeSessionId = null;
+  promptedRealtimeCandidateIds.clear();
+  hideAllowModal();
+  stopRealtimeLoop();
+  setRealtimeMessage(t("realtimeSessionNeedsRefresh"));
+}
+
+function invalidateRealtimeSessionForScope(scope) {
+  if (scope === "realtime") {
+    invalidateRealtimeSession();
+  }
+}
+
 async function processRealtimeFrame() {
   if (!cameraStream || !realtimeSessionId || realtimeBusy) {
     return;
@@ -830,8 +888,10 @@ function handleRealtimeCandidates(candidates) {
   }
   promptedRealtimeCandidateIds.add(candidate.candidate_id);
   pendingRealtimeCandidate = candidate;
+  lastFocusedElementBeforeAllow = document.activeElement;
   allowFaceImage.src = candidate.image;
   allowModal.classList.remove("hidden");
+  allowAcceptButton.focus();
 }
 
 async function allowRealtimeCandidate() {
@@ -864,18 +924,23 @@ function hideAllowModal() {
   pendingRealtimeCandidate = null;
   allowFaceImage.removeAttribute("src");
   allowModal.classList.add("hidden");
+  restoreFocus(lastFocusedElementBeforeAllow);
+  lastFocusedElementBeforeAllow = null;
 }
 
 function bindFileName(input, label, placeholderKey) {
   input.addEventListener("change", () => {
     updateFileName(input, label, placeholderKey);
+    if (scopeForReferenceInput(input) === "realtime") {
+      invalidateRealtimeSession();
+    }
   });
 }
 
 function updateFileName(input, label, placeholderKey) {
   const files = Array.from(input.files || []);
   const scope = scopeForReferenceInput(input);
-  const capturedCount = scope ? capturedReferenceFiles[scope].length : 0;
+  const capturedCount = scope ? getCapturedReferenceCount(scope) : 0;
   const totalCount = files.length + capturedCount;
   if (totalCount === 0) {
     label.textContent = t(placeholderKey);
@@ -888,6 +953,7 @@ function updateFileName(input, label, placeholderKey) {
   if (scope) {
     syncReferenceGuideCount(scope, totalCount);
     renderCapturedReferences(scope);
+    updateReferenceUploadClearButtons(scope);
   }
 }
 
@@ -915,11 +981,55 @@ function referencePlaceholderForScope(scope) {
 
 function getReferenceCount(scope) {
   const input = referenceInputForScope(scope);
-  return Array.from(input.files || []).length + capturedReferenceFiles[scope].length;
+  return Array.from(input.files || []).length + getCapturedReferenceCount(scope);
+}
+
+function getCapturedReferenceCount(scope) {
+  return capturedReferenceFiles[scope].filter(Boolean).length;
+}
+
+function getNextCaptureStepIndex(scope) {
+  return capturedReferenceFiles[scope].findIndex((file) => !file);
+}
+
+function getNextCaptureStep(scope) {
+  const stepIndex = getNextCaptureStepIndex(scope);
+  return CAPTURE_STEPS[stepIndex < 0 ? CAPTURE_STEPS.length - 1 : stepIndex];
+}
+
+function getCaptureStepIndexForPose(pose) {
+  return CAPTURE_STEPS.findIndex((step) => step.pose === pose);
+}
+
+function getDetectedMissingCaptureStepIndex(scope) {
+  if (!latestCapturePose || !latestCapturePose.detected) {
+    return -1;
+  }
+  const stepIndex = getCaptureStepIndexForPose(latestCapturePose.pose);
+  if (stepIndex < 0 || capturedReferenceFiles[scope][stepIndex]) {
+    return -1;
+  }
+  return stepIndex;
+}
+
+function getDetectedCaptureStepIndex() {
+  if (!latestCapturePose || !latestCapturePose.detected) {
+    return -1;
+  }
+  return getCaptureStepIndexForPose(latestCapturePose.pose);
 }
 
 function updateReferenceState(scope) {
   updateFileName(referenceInputForScope(scope), referenceLabelForScope(scope), referencePlaceholderForScope(scope));
+}
+
+function updateReferenceUploadClearButtons(scope) {
+  const hasUploadedReferences = Array.from(referenceInputForScope(scope).files || []).length > 0;
+  referenceUploadClearButtons.forEach((button) => {
+    if (button.dataset.referenceUploadClear === scope) {
+      button.classList.toggle("hidden", !hasUploadedReferences);
+    }
+  });
 }
 
 function syncReferenceGuideCount(scope, count) {
@@ -931,29 +1041,31 @@ function syncReferenceGuideCount(scope, count) {
   target.dataset.i18n = key;
   target.textContent = t(key).replace("{count}", String(count));
   target.classList.toggle("is-ready", count >= 5);
-  setReferenceGuideProgress(scope, count);
+  setReferenceGuideProgress(scope, count >= 5);
 }
 
-function setReferenceGuideProgress(scope, count) {
+function setReferenceGuideProgress(scope, isReady) {
   const guide = referenceGuides[scope];
   if (!guide) {
     return;
   }
-  const normalizedCount = Math.max(0, Math.min(5, Number(count) || 0));
-  guide.classList.toggle("is-ready", normalizedCount >= 5);
+  guide.classList.toggle("is-ready", isReady);
   guide.querySelectorAll("[data-angle-step]").forEach((step) => {
-    setGuideStepState(step, Number(step.dataset.angleStep), normalizedCount);
+    setGuideStepSlotState(step, Number(step.dataset.angleStep), scope);
   });
   guide.querySelectorAll("[data-guide-dot]").forEach((dot) => {
-    setGuideStepState(dot, Number(dot.dataset.guideDot), normalizedCount);
+    setGuideStepSlotState(dot, Number(dot.dataset.guideDot), scope);
   });
 }
 
-function setGuideStepState(element, stepNumber, count) {
-  const complete = count >= stepNumber;
-  const next = count < 5 && stepNumber === count + 1;
+function setGuideStepSlotState(element, stepNumber, scope) {
+  const stepIndex = stepNumber - 1;
+  const complete = Boolean(capturedReferenceFiles[scope][stepIndex]);
+  const next = !complete && stepIndex === getNextCaptureStepIndex(scope);
+  const detected = !complete && stepIndex === getDetectedCaptureStepIndex();
   element.classList.toggle("is-complete", complete);
   element.classList.toggle("is-next", next);
+  element.classList.toggle("is-detected", detected);
 }
 
 function renderCapturedReferences(scope) {
@@ -964,7 +1076,12 @@ function renderCapturedReferences(scope) {
   capturedReferenceUrls[scope].forEach((url) => URL.revokeObjectURL(url));
   capturedReferenceUrls[scope] = [];
   strip.replaceChildren();
-  capturedReferenceFiles[scope].forEach((file, index) => {
+  capturedReferenceFiles[scope].forEach((file, stepIndex) => {
+    if (!file) {
+      return;
+    }
+    const step = CAPTURE_STEPS[stepIndex];
+    const stepLabel = t(step.key);
     const wrapper = document.createElement("div");
     wrapper.className = "reference-thumb";
 
@@ -975,18 +1092,18 @@ function renderCapturedReferences(scope) {
     image.alt = "";
 
     const label = document.createElement("span");
-    label.textContent = t("capturedLabel").replace("{number}", String(index + 1));
+    label.textContent = stepLabel;
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.textContent = t("removeCapturedReference");
-    removeButton.setAttribute("aria-label", `${t("removeCapturedReference")} ${index + 1}`);
-    removeButton.addEventListener("click", () => removeCapturedReference(scope, index));
+    removeButton.setAttribute("aria-label", `${t("removeCapturedReference")} ${stepLabel}`);
+    removeButton.addEventListener("click", () => removeCapturedReference(scope, stepIndex));
 
     wrapper.append(image, removeButton, label);
     strip.append(wrapper);
   });
-  const hasCapturedReferences = capturedReferenceFiles[scope].length > 0;
+  const hasCapturedReferences = getCapturedReferenceCount(scope) > 0;
   strip.classList.toggle("hidden", !hasCapturedReferences);
   captureClearButtons.forEach((button) => {
     if (button.dataset.captureClear === scope) {
@@ -995,9 +1112,10 @@ function renderCapturedReferences(scope) {
   });
 }
 
-function removeCapturedReference(scope, index) {
-  capturedReferenceFiles[scope].splice(index, 1);
+function removeCapturedReference(scope, stepIndex) {
+  capturedReferenceFiles[scope][stepIndex] = null;
   updateReferenceState(scope);
+  invalidateRealtimeSessionForScope(scope);
   updateCaptureModal();
 }
 
@@ -1005,9 +1123,21 @@ function clearCapturedReferences(scope) {
   if (!scope) {
     return;
   }
-  capturedReferenceFiles[scope] = [];
+  capturedReferenceFiles[scope] = createCaptureSlots();
   updateReferenceState(scope);
+  invalidateRealtimeSessionForScope(scope);
   setCaptureMessage(t("captureInitialMessage"));
+  updateCaptureModal();
+}
+
+function clearUploadedReferences(scope) {
+  if (!scope) {
+    return;
+  }
+  const input = referenceInputForScope(scope);
+  input.value = "";
+  updateReferenceState(scope);
+  invalidateRealtimeSessionForScope(scope);
   updateCaptureModal();
 }
 
@@ -1015,10 +1145,12 @@ async function openReferenceCapture(scope) {
   if (!["video", "realtime"].includes(scope)) {
     return;
   }
+  lastFocusedElementBeforeCapture = document.activeElement;
   activeCaptureScope = scope;
   captureModal.classList.remove("hidden");
   setCaptureMessage(t("captureCameraStarting"));
   updateCaptureModal();
+  captureCloseButton.focus();
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     setCaptureMessage(t("captureNotSupported"), true);
@@ -1050,6 +1182,8 @@ function closeReferenceCapture() {
   stopReferenceCaptureStream();
   activeCaptureScope = null;
   captureModal.classList.add("hidden");
+  restoreFocus(lastFocusedElementBeforeCapture);
+  lastFocusedElementBeforeCapture = null;
 }
 
 function stopReferenceCaptureStream() {
@@ -1089,26 +1223,7 @@ async function requestCapturePoseEstimate() {
 
   capturePoseBusy = true;
   try {
-    const canvas = document.createElement("canvas");
-    const maxWidth = 480;
-    const scale = Math.min(1, maxWidth / referenceCaptureVideo.videoWidth);
-    canvas.width = Math.max(1, Math.round(referenceCaptureVideo.videoWidth * scale));
-    canvas.height = Math.max(1, Math.round(referenceCaptureVideo.videoHeight * scale));
-    const context = canvas.getContext("2d");
-    context.drawImage(referenceCaptureVideo, 0, 0, canvas.width, canvas.height);
-    const blob = await canvasToBlob(canvas);
-
-    const formData = new FormData();
-    formData.append("frame", blob, "pose.jpg");
-    const response = await fetch("/api/realtime/face-pose", {
-      method: "POST",
-      body: formData,
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload.detail || t("poseEstimateFailed"));
-    }
-    latestCapturePose = payload;
+    latestCapturePose = await estimateCapturePoseFromCurrentFrame();
   } catch (error) {
     latestCapturePose = {
       detected: false,
@@ -1121,24 +1236,43 @@ async function requestCapturePoseEstimate() {
   }
 }
 
+async function estimateCapturePoseFromCurrentFrame() {
+  if (!referenceCaptureVideo.videoWidth || !referenceCaptureVideo.videoHeight) {
+    throw new Error(t("frameCaptureFailed"));
+  }
+
+  const maxWidth = 480;
+  const scale = Math.min(1, maxWidth / referenceCaptureVideo.videoWidth);
+  capturePoseCanvas.width = Math.max(1, Math.round(referenceCaptureVideo.videoWidth * scale));
+  capturePoseCanvas.height = Math.max(1, Math.round(referenceCaptureVideo.videoHeight * scale));
+  const context = capturePoseCanvas.getContext("2d");
+  context.drawImage(referenceCaptureVideo, 0, 0, capturePoseCanvas.width, capturePoseCanvas.height);
+  const blob = await canvasToBlob(capturePoseCanvas);
+
+  const formData = new FormData();
+  formData.append("frame", blob, "pose.jpg");
+  const response = await fetch("/api/realtime/face-pose", {
+    method: "POST",
+    body: formData,
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.detail || t("poseEstimateFailed"));
+  }
+  return payload;
+}
+
 async function captureReferencePhoto() {
   const scope = activeCaptureScope;
   if (!scope || !referenceCaptureStream) {
     return;
   }
-  const currentCount = getReferenceCount(scope);
-  if (currentCount >= CAPTURE_STEPS.length) {
+  if (getCapturedReferenceCount(scope) >= CAPTURE_STEPS.length) {
     setCaptureMessage(t("captureDone"));
     updateCaptureModal();
     return;
   }
 
-  const step = CAPTURE_STEPS[currentCount];
-  if (!isCapturePoseAccepted(step)) {
-    setCaptureMessage(capturePoseGuidance(step), true);
-    updateCaptureModal();
-    return;
-  }
   const width = referenceCaptureVideo.videoWidth || 960;
   const height = referenceCaptureVideo.videoHeight || 720;
   if (!width || !height) {
@@ -1150,6 +1284,15 @@ async function captureReferencePhoto() {
   const scale = Math.min(1, maxWidth / width);
   try {
     captureShotButton.disabled = true;
+    capturePoseBusy = true;
+    latestCapturePose = await estimateCapturePoseFromCurrentFrame();
+    const detectedStepIndex = getDetectedMissingCaptureStepIndex(scope);
+    const fallbackStep = getNextCaptureStep(scope);
+    if (detectedStepIndex < 0) {
+      setCaptureMessage(capturePoseGuidance(fallbackStep), true);
+      return;
+    }
+    const step = CAPTURE_STEPS[detectedStepIndex];
     referenceCaptureCanvas.width = Math.max(1, Math.round(width * scale));
     referenceCaptureCanvas.height = Math.max(1, Math.round(height * scale));
     const context = referenceCaptureCanvas.getContext("2d");
@@ -1159,12 +1302,19 @@ async function captureReferencePhoto() {
       type: "image/jpeg",
       lastModified: Date.now(),
     });
-    capturedReferenceFiles[scope].push(file);
+    capturedReferenceFiles[scope][detectedStepIndex] = file;
     updateReferenceState(scope);
+    invalidateRealtimeSessionForScope(scope);
     setCaptureMessage(t("captureSaved").replace("{angle}", t(step.key)));
   } catch (error) {
+    latestCapturePose = {
+      detected: false,
+      pose: "error",
+      error: error.message,
+    };
     setCaptureMessage(error.message, true);
   } finally {
+    capturePoseBusy = false;
     updateCaptureModal();
   }
 }
@@ -1174,29 +1324,28 @@ function updateCaptureModal() {
   if (!scope) {
     return;
   }
-  const count = getReferenceCount(scope);
-  const normalizedCount = Math.max(0, Math.min(CAPTURE_STEPS.length, count));
-  const nextStepIndex = Math.min(normalizedCount, CAPTURE_STEPS.length - 1);
-  const nextStep = CAPTURE_STEPS[nextStepIndex];
+  const count = getCapturedReferenceCount(scope);
+  const detectedStepIndex = getDetectedMissingCaptureStepIndex(scope);
+  const displayStep = detectedStepIndex >= 0 ? CAPTURE_STEPS[detectedStepIndex] : getNextCaptureStep(scope);
 
   captureProgressEl.textContent =
     count >= CAPTURE_STEPS.length
       ? t("referenceGuideReady").replace("{count}", String(count))
       : t("referenceGuideCount").replace("{count}", String(count));
   captureProgressEl.classList.toggle("is-ready", count >= CAPTURE_STEPS.length);
-  captureStepTitle.textContent = t(nextStep.key);
+  captureStepTitle.textContent = t(displayStep.key);
   captureShotButton.textContent =
-    count >= CAPTURE_STEPS.length ? t("captureCompleteButton") : t("captureButton").replace("{angle}", t(nextStep.key));
-  const poseAccepted = isCapturePoseAccepted(nextStep);
-  captureShotButton.disabled = !referenceCaptureStream || count >= CAPTURE_STEPS.length || !poseAccepted;
-  captureResetButton.disabled = capturedReferenceFiles[scope].length === 0;
+    count >= CAPTURE_STEPS.length ? t("captureCompleteButton") : t("captureButton").replace("{angle}", t(displayStep.key));
+  const poseAccepted = detectedStepIndex >= 0;
+  captureShotButton.disabled = !referenceCaptureStream || capturePoseBusy || count >= CAPTURE_STEPS.length || !poseAccepted;
+  captureResetButton.disabled = count === 0;
   if (count >= CAPTURE_STEPS.length) {
     setCaptureMessage(t("captureDone"));
   }
-  updateCapturePoseStatus(nextStep, poseAccepted, count >= CAPTURE_STEPS.length);
+  updateCapturePoseStatus(displayStep, poseAccepted, count >= CAPTURE_STEPS.length);
 
   captureModal.querySelectorAll("[data-capture-step]").forEach((step) => {
-    setGuideStepState(step, Number(step.dataset.captureStep), normalizedCount);
+    setGuideStepSlotState(step, Number(step.dataset.captureStep), scope);
   });
 }
 
@@ -1205,11 +1354,37 @@ function setCaptureMessage(message, isError = false) {
   captureMessage.classList.toggle("error", Boolean(isError));
 }
 
-function isCapturePoseAccepted(step) {
-  if (!latestCapturePose || !latestCapturePose.detected) {
-    return false;
+function trapModalFocus(event, modal) {
+  if (event.key !== "Tab") {
+    return;
   }
-  return latestCapturePose.pose === step.pose;
+  const focusable = Array.from(
+    modal.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => element.offsetParent !== null);
+  if (!focusable.length) {
+    event.preventDefault();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+    return;
+  }
+  if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function restoreFocus(element) {
+  if (element && typeof element.focus === "function") {
+    element.focus();
+  }
 }
 
 function capturePoseGuidance(step) {
@@ -1224,6 +1399,14 @@ function capturePoseGuidance(step) {
   }
   if (!latestCapturePose.detected || latestCapturePose.pose === "no_face") {
     return t("poseNoFace");
+  }
+  const detectedStepIndex = getDetectedCaptureStepIndex();
+  if (
+    activeCaptureScope &&
+    detectedStepIndex >= 0 &&
+    capturedReferenceFiles[activeCaptureScope][detectedStepIndex]
+  ) {
+    return t("poseAlreadySaved").replace("{angle}", t(CAPTURE_STEPS[detectedStepIndex].key));
   }
   return t(step.promptKey);
 }
@@ -1309,7 +1492,9 @@ function applyLanguage(lang) {
   updateFileName(referenceInput, referenceFileNameEl, "imagePlaceholder");
   updateFileName(realtimeReferenceInput, realtimeReferenceFileNameEl, "optionalImagePlaceholder");
   langButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.lang === currentLang);
+    const active = button.dataset.lang === currentLang;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
   });
   syncVideoModeState();
   syncRealtimeModeState();
