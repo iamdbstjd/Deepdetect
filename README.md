@@ -22,7 +22,7 @@ English guided face capture with pose check:
 - Select one or more people to allow; everyone else stays blurred.
 - Upload multiple manual allow-list face images when candidate detection is not enough.
 - Capture allow-list reference photos from the laptop camera or upload existing images.
-- Guide operators to add front, 45-degree, and profile reference faces, with camera pose checks before capture.
+- Guide operators with a mirrored camera preview and automatic front, 45-degree, and profile reference slots.
 - Keep an already matched reference track visible even when a later side angle scores lower.
 - Keep saved-video work and realtime preview in separate product surfaces.
 - Detect faces and license plates using YOLO model wrappers.
@@ -36,15 +36,19 @@ English guided face capture with pose check:
 
 ## Guided Face Capture
 
-The allow-list reference flow supports both image upload and laptop-camera capture. When the operator opens the capture dialog, the browser sends sampled camera frames to `/api/realtime/face-pose`. The backend returns a coarse face direction estimate, and the capture button stays disabled until the detected direction matches the current step.
+The allow-list reference flow supports both image upload and laptop-camera capture. The capture preview is mirrored so operators can align their face naturally, while the frames sent to pose analysis and saved reference images keep the original camera orientation.
 
-Capture sequence:
+When the operator opens the capture dialog, the browser sends sampled camera frames to `/api/realtime/face-pose`. The backend returns a coarse face direction estimate, and the save button becomes available when the detected direction maps to an empty reference slot.
+
+Reference slots:
 
 1. Front
-2. Left 45
-3. Right 45
-4. Left profile
-5. Right profile
+2. One side 45
+3. Other side 45
+4. One side profile
+5. Other side profile
+
+Operators do not need to follow the slot order. If the current detected angle is still empty, deepdetect saves it into that slot. If the angle was already saved, the UI asks the operator to slowly turn to another angle.
 
 The pose check is a usability guard for better reference images. It is not a security-grade biometric enrollment system.
 
