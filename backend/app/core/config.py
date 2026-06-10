@@ -53,6 +53,8 @@ class Settings:
     face_matcher_mode: str = "arcface"
     face_match_model_path: Path | None = None
     face_match_threshold: float = 0.35
+    candidate_max_faces: int = 5
+    candidate_identity_threshold: float = 0.30
     tracker_enabled: bool = True
     tracker_iou_threshold: float = 0.3
     tracker_smoothing_alpha: float = 0.55
@@ -107,6 +109,11 @@ def get_settings() -> Settings:
             )
         ),
         face_match_threshold=_float_env("EMBED_FACE_MATCH_THRESHOLD", 0.35),
+        candidate_max_faces=_int_env("EMBED_CANDIDATE_MAX_FACES", 5),
+        candidate_identity_threshold=_float_env(
+            "EMBED_CANDIDATE_IDENTITY_THRESHOLD",
+            0.30,
+        ),
         tracker_enabled=_bool_env("EMBED_TRACKER_ENABLED", True),
         tracker_iou_threshold=_float_env("EMBED_TRACKER_IOU_THRESHOLD", 0.3),
         tracker_smoothing_alpha=_float_env("EMBED_TRACKER_SMOOTHING_ALPHA", 0.55),

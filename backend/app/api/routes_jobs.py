@@ -88,6 +88,8 @@ def build_jobs_router(
                 video_path,
                 detector,
                 candidate_dir,
+                max_candidates=settings.candidate_max_faces,
+                duplicate_identity_threshold=settings.candidate_identity_threshold,
                 face_matcher=face_matcher,
             )
             return {

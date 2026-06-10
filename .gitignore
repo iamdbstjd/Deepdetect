@@ -8,11 +8,13 @@ dist/
 build/
 .omx/
 
-# Local planning and work notes
+# Local planning, report, presentation, and downloaded media
 plan.md
-docs/phase*.md
-docs/model-inventory.md
-docs/face-embedding.md
+docs/
+artifacts/
+downloads/
+*.pptx
+sample_test.png
 samples/qa-template.md
 
 storage/uploads/*

@@ -45,8 +45,9 @@ def extract_video_face_candidates(
     detector: RegionDetector,
     output_dir: Path,
     max_frames: int = 90,
-    max_candidates: int = 12,
+    max_candidates: int = 5,
     duplicate_threshold: float = 0.86,
+    duplicate_identity_threshold: float = 0.30,
     face_matcher: FaceIdentityMatcher | None = None,
 ) -> list[VideoFaceCandidate]:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -56,6 +57,7 @@ def extract_video_face_candidates(
 
     candidates: list[VideoFaceCandidate] = []
     observations: list[_FaceObservation] = []
+    group_frames: list[list[_FaceObservation]] = []
     tracker = DetectionTracker(iou_threshold=0.25, smoothing_alpha=0.55, max_missing=8)
     try:
         total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -67,6 +69,7 @@ def extract_video_face_candidates(
             if not ok:
                 break
             tracked_detections = tracker.update(_face_detections(frame, detector.detect(frame)))
+            frame_observations: list[_FaceObservation] = []
             for detection in _face_detections(frame, tracked_detections):
                 crop = _crop_face(frame, detection)
                 sharpness = _sharpness(crop)
@@ -77,18 +80,24 @@ def extract_video_face_candidates(
                     sharpness,
                 ):
                     continue
-                observations.append(
-                    _FaceObservation(
-                        frame_index=frame_index,
-                        detection=detection,
-                        crop=crop,
-                        histogram=_candidate_histogram(crop),
-                        sharpness=sharpness,
-                        quality=_candidate_quality(frame, detection, sharpness),
-                    )
+                observation = _FaceObservation(
+                    frame_index=frame_index,
+                    detection=detection,
+                    crop=crop,
+                    histogram=_candidate_histogram(crop),
+                    sharpness=sharpness,
+                    quality=_candidate_quality(frame, detection, sharpness),
                 )
+                observations.append(observation)
+                frame_observations.append(observation)
+            if len(frame_observations) >= max_candidates:
+                group_frames.append(frame_observations)
     finally:
         capture.release()
+
+    group_observations = _select_group_frame_observations(group_frames, max_candidates)
+    if group_observations:
+        return _write_candidates(group_observations, output_dir, face_matcher)
 
     representatives: list[_Representative] = []
     usable_observations = _keep_clear_observations(observations)
@@ -99,12 +108,35 @@ def extract_video_face_candidates(
             observation,
             representatives,
             duplicate_threshold,
+            duplicate_identity_threshold,
         ):
             continue
-        candidate_id = f"face_{len(candidates) + 1:04d}"
+        candidates.extend(
+            _write_candidates(
+                [observation],
+                output_dir,
+                face_matcher,
+                start_index=len(candidates),
+                representatives=representatives,
+            )
+        )
+    return candidates
+
+
+def _write_candidates(
+    observations: list[_FaceObservation],
+    output_dir: Path,
+    face_matcher: FaceIdentityMatcher | None,
+    start_index: int = 0,
+    representatives: list[_Representative] | None = None,
+) -> list[VideoFaceCandidate]:
+    candidates: list[VideoFaceCandidate] = []
+    target_representatives = representatives if representatives is not None else []
+    for offset, observation in enumerate(observations, start=start_index + 1):
+        candidate_id = f"face_{offset:04d}"
         image_path = output_dir / f"{candidate_id}.jpg"
         cv2.imwrite(str(image_path), observation.crop)
-        representatives.append(
+        target_representatives.append(
             _Representative(
                 histogram=observation.histogram,
                 matcher=_prepare_candidate_matcher(
@@ -128,6 +160,27 @@ def extract_video_face_candidates(
             )
         )
     return candidates
+
+
+def _select_group_frame_observations(
+    group_frames: list[list[_FaceObservation]],
+    max_candidates: int,
+) -> list[_FaceObservation]:
+    if max_candidates <= 0 or not group_frames:
+        return []
+    best_frame = max(
+        group_frames,
+        key=lambda observations: (
+            min(len(observations), max_candidates),
+            sum(item.quality for item in observations)
+            / max(1, len(observations)),
+            min(item.detection.confidence for item in observations),
+        ),
+    )
+    return sorted(
+        sorted(best_frame, key=lambda item: item.quality, reverse=True)[:max_candidates],
+        key=lambda item: item.detection.x1,
+    )
 
 
 def _sample_positions(total_frames: int, max_frames: int) -> list[int]:
@@ -242,6 +295,7 @@ def _is_duplicate_observation(
     observation: _FaceObservation,
     representatives: list[_Representative],
     histogram_threshold: float,
+    identity_threshold: float,
 ) -> bool:
     for representative in representatives:
         if _same_track(observation, representative):
@@ -255,7 +309,11 @@ def _is_duplicate_observation(
             >= histogram_threshold
         ):
             return True
-        if _matches_representative(observation.crop, representative.matcher):
+        if _matches_representative(
+            observation.crop,
+            representative.matcher,
+            identity_threshold,
+        ):
             return True
     return False
 
@@ -268,13 +326,14 @@ def _same_track(observation: _FaceObservation, representative: _Representative) 
 def _matches_representative(
     crop: np.ndarray,
     matcher: PreparedFaceMatcher | None,
+    identity_threshold: float,
 ) -> bool:
     if matcher is None or crop.size == 0:
         return False
     height, width = crop.shape[:2]
     detection = Detection("face", 0, 0, width, height, 1.0)
     try:
-        return matcher.is_match(crop, detection)
+        return matcher.match_score(crop, detection) >= identity_threshold
     except Exception:
         return False
 
