@@ -190,6 +190,33 @@ models/face/w600k_r50.onnx
 
 모델 파일은 용량과 라이선스 제약 때문에 Git에는 포함하지 않습니다. 위 기본 경로에 호환되는 weight를 배치하거나 환경변수로 경로를 바꿔 실행합니다.
 
+## YOLO 학습 데이터 출처
+
+YOLOv8 얼굴 검출기 학습 데이터 구성은 재현 가능성을 위해 아래와 같이 문서화합니다. 표의 수량은 각 원본 데이터셋 전체 크기가 아니라, 프로젝트 학습 믹스에 샘플링한 이미지 수입니다. 원본 학습 이미지는 용량과 데이터셋 라이선스 제약 때문에 이 저장소에 포함하지 않습니다.
+
+선택한 얼굴 주석은 모두 YOLO 단일 클래스 형식으로 변환했습니다.
+
+```text
+0 x_center y_center width height
+```
+
+배경 네거티브 샘플은 얼굴 라벨 없이 포함하여 방송/야외 장면에서 얼굴이 아닌 영역을 얼굴로 오검출하는 경우를 줄이는 데 사용했습니다.
+
+| 학습 소스 | 샘플 수 | 학습에서의 역할 | 출처 |
+|---|---:|---|---|
+| WIDER FACE | 7,500 | 얼굴 크기, 자세, 군중 밀도, 가림이 다양한 기본 얼굴 검출 데이터 | [Official](https://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/) / [Paper](https://arxiv.org/abs/1511.06523) |
+| 일반 얼굴 소스 | 5,500 | 정면, 반측면, 측면 얼굴 다양성 보강 | [CelebA](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) |
+| 한국 도메인 얼굴 | 5,500 | 한국인 얼굴, 조명, 카메라 각도, 국내 촬영 환경 분포 보강 | [AI-Hub](https://www.aihub.or.kr/) |
+| 마스크 / 가림 | 1,000 | 마스크와 부분 가림 얼굴을 포함한 개인정보 보호 영상의 예외 상황 보강 | [RMFD GitHub](https://github.com/X-zhangyang/Real-World-Masked-Face-Dataset) / [Paper](https://arxiv.org/abs/2003.09093) |
+| 배경 네거티브 샘플 | 500 | 얼굴이 없는 배경과 어려운 배경 장면을 추가하여 오검출 감소 | [COCO](https://cocodataset.org/) / [Open Images V7](https://storage.googleapis.com/openimages/web/index.html) |
+
+학습 흐름:
+
+1. 공개 데이터셋 혼합 소스에서 이미지를 샘플링합니다.
+2. 얼굴 박스 또는 변환된 얼굴 박스를 YOLO 단일 클래스 라벨로 변환합니다.
+3. 마스크, 측면, 부분 가림, 얼굴이 없는 배경 샘플을 추가합니다.
+4. YOLOv8 얼굴 검출기를 fine-tuning하고 검증용 분할에서 성능을 확인합니다.
+
 주요 환경변수:
 
 ```bash

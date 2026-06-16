@@ -190,6 +190,33 @@ models/face/w600k_r50.onnx
 
 Model weights are intentionally ignored by Git because of size and license constraints. Place compatible weights at the default paths above, or override the paths with environment variables.
 
+## YOLO Training Data Sources
+
+The YOLOv8 face detector training mix is documented below for reproducibility. Counts refer to the sampled images used in the project mix, not the full upstream dataset sizes. Raw training images are not stored in this repository because of dataset license and size constraints.
+
+All selected face annotations are normalized into one YOLO class:
+
+```text
+0 x_center y_center width height
+```
+
+Background negative images are included without face labels to reduce false-positive detections on broadcast and outdoor scenes.
+
+| Training source | Sampled count | Role in training | Source |
+|---|---:|---|---|
+| WIDER FACE | 7,500 | Main face-detection base set with varied scale, pose, crowd density, and occlusion | [Official](https://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/) / [Paper](https://arxiv.org/abs/1511.06523) |
+| General face sources | 5,500 | General front, half-profile, and side-angle face diversity | [CelebA](https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html) |
+| Korean-domain faces | 5,500 | Korean-domain people, lighting, camera angle, and scene distribution | [AI-Hub](https://www.aihub.or.kr/) |
+| Mask / occlusion | 1,000 | Masked and partially occluded faces for privacy-video edge cases | [RMFD GitHub](https://github.com/X-zhangyang/Real-World-Masked-Face-Dataset) / [Paper](https://arxiv.org/abs/2003.09093) |
+| Background negatives | 500 | No-face or hard-background images for false-positive suppression | [COCO](https://cocodataset.org/) / [Open Images V7](https://storage.googleapis.com/openimages/web/index.html) |
+
+Training flow:
+
+1. Sample images from the public source mix.
+2. Convert face boxes or derived face boxes into YOLO single-class labels.
+3. Add masked, side-profile, partial-occlusion, and no-face background cases.
+4. Fine-tune the YOLOv8 face detector and validate on a held-out split.
+
 Useful environment variables:
 
 ```bash
